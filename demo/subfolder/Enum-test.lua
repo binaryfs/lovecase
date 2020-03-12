@@ -1,0 +1,66 @@
+-- Unit tests for the Enum class.
+-- @author Fabian Staacke
+-- @copyright 2020
+-- @license https://opensource.org/licenses/MIT
+
+local lovecase = require "lovecase"
+local Enum = require "demo.subfolder.Enum"
+
+local test = lovecase.newTestSet("Enum")
+
+test:group("new()", function(test)
+  test:run("should create an enum from a sequence", function(test)
+    local Color = Enum.new{"Red", "Green", "Blue"}
+    test:assertEqual(#Color, 3)
+    test:assertEqual(Color.Red, 1)
+    test:assertEqual(Color.Green, 2)
+    test:assertEqual(Color.Blue, 3)
+  end)
+  test:run("should create an enum from a hash map", function(test)
+    local Direction = Enum.new{Left = "left", Right = "right"}
+    test:assertEqual(Direction.Left, "left")
+    test:assertEqual(Direction.Right, "right")
+  end)
+  test:run("should create an enum from mixed input", function(test)
+    local Color = Enum.new{"Red", "Green", Blue = "blue"}
+    test:assertEqual(Color.Red, 1)
+    test:assertEqual(Color.Green, 2)
+    test:assertEqual(Color.Blue, "blue")
+  end)
+end)
+
+test:group("caseOf()", function(test)
+  local Color = Enum.new{"Red", "Green", Blue = "blue"}
+  test:run("should return the case of the given value", function(test)
+    test:assertEqual(Color:caseOf(1), "Red")
+    test:assertEqual(Color:caseOf(2), "Green")
+    test:assertEqual(Color:caseOf("blue"), "Blue")
+  end)
+  test:run("should return nil for unknown values", function(test)
+    test:assertEqual(Color:caseOf("green"), nil)
+  end)
+end)
+
+test:group("verify()", function(test)
+  local Direction = Enum.new{"Left", "Right"}
+  test:run("should accept valid values", function(test)
+    test:assertEqual(Direction:verify(1), 1)
+    test:assertEqual(Direction:verify(2), 2)
+  end)
+  test:run("should raise an error for unknown values", function(test)
+    test:assertError(function()
+      Direction:verify(7)
+    end)
+  end)
+end)
+
+test:group("__newindex()", function(test)
+  local Direction = Enum.new{"Left", "Right"}
+  test:run("should not allow adding values", function(test)
+    test:assertError(function()
+      Direction.Down = 3
+    end)
+  end)
+end)
+
+return test
