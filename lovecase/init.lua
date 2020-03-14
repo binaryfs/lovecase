@@ -1,5 +1,5 @@
 --- Lightweight unit testing module that integrates well into the LÖVE framework.
--- @module geomath
+-- @module lovecase
 -- @author Fabian Staacke
 -- @copyright 2020
 -- @license https://opensource.org/licenses/MIT
@@ -11,7 +11,7 @@ local TestReport = require(BASE .. ".TestReport")
 local lovecase = {
   _NAME = "lovecase",
   _DESCRIPTION = "Lightweight unit testing module that integrates well into the LÖVE framework",
-  _VERSION = "0.9.0",
+  _VERSION = "1.0.0",
   _URL = "https://github.com/binaryfs/lua-lovecase",
   _LICENSE = "MIT License",
   _COPYRIGHT = "Copyright (c) 2020 Fabian Staacke",
