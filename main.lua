@@ -4,5 +4,5 @@ local lovecase = require "lovecase"
 
 function love.load()
   local report = lovecase.runAllTestFiles("demo", true)
-  print(report:toString())
+  print(report:printResults())
 end

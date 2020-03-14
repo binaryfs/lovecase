@@ -44,9 +44,9 @@ function TestReport:addResult(testName, failed, reason)
   end
 end
 
---- Get a string representation of the report.
--- @return The report as string
-function TestReport:toString()
+--- Get the test results formatted as string.
+-- @return Test results as string
+function TestReport:printResults()
   local report = table.concat(self._lines, "\n")
   local result = string.format(
     TestReport.resultLine,
@@ -54,6 +54,25 @@ function TestReport:toString()
     self._passed + self._failed
   )
   return report .. result
+end
+
+--- Get an iterator over the lines of the report.
+-- @return ipairs iterator
+-- @usage
+-- for i, line in report:lines() do
+--   print(i .. ". " .. line)
+-- end
+function TestReport:lines(callback)
+  return ipairs(self._lines)
+end
+
+--- Get a (technical) string representation of the report.
+-- @treturn string
+function TestReport:__tostring()
+  local mt = getmetatable(self)
+  local rawString = tostring(setmetatable(self, nil))
+  setmetatable(self, mt)
+  return string.format("<TestReport (%s)>", rawString)
 end
 
 --- Write a test line into the report.

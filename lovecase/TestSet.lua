@@ -131,6 +131,15 @@ function TestSet:writeReport(report)
   return report
 end
 
+--- Get a string representation of the test set.
+-- @treturn string
+function TestSet:__tostring()
+  local mt = getmetatable(self)
+  local rawString = tostring(setmetatable(self, nil))
+  setmetatable(self, mt)
+  return string.format("<TestSet '%s' (%s)>", self._groupStack[1].name, rawString)
+end
+
 --- Internal function to write a report.
 -- @param report The report (a TestReport instance)
 -- @param group The current test group to write into the report
