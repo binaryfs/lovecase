@@ -8,12 +8,13 @@ local List = require "demo.List"
 
 local test = lovecase.newTestSet("List")
 
--- Add a check so we can detect values of type List.
+-- Add a check so that lovecase can detect List instances.
 test:addTypeCheck(function(value)
   return List.isInstance(value) and "List" or false
 end)
 
--- Add a check so we can compare lists.
+-- Add a check so that lovecase can compare lists.
+-- Alternatively you could also overload the == operator for lists.
 test:addEqualityCheck("List", function(list1, list2)
   return list1:equal(list2)
 end)
@@ -63,7 +64,7 @@ test:group("indexOf()", function(test)
 end)
 
 test:group("removeValue()", function(test)
-  test:run("should remove the value 9", function()
+  test:run("should remove the specified value", function()
     local list = List.new{1,2,9,3}
     list:removeValue(9)
     test:assertEqual(list, List.new{1,2,3})
@@ -72,7 +73,7 @@ test:group("removeValue()", function(test)
     local list = List.new{1,2,3}
     test:assertEqual(list:removeValue(1), 1)
   end)
-  test:run("should return nil if value is not found", function()
+  test:run("should return nil if value is not present", function()
     local list = List.new()
     test:assertEqual(list:removeValue(1), nil)
   end)
@@ -80,7 +81,6 @@ end)
 
 test:group("reverse()", function(test)
   test:run("should reverse the order of values", function()
-    test:assertEqual(List.new{1,2,3}:reverse(), List.new{3,2,1})
     test:assertEqual(List.new{1,2,3,4}:reverse(), List.new{4,3,2,1})
   end)
 end)
