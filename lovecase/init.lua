@@ -1,6 +1,6 @@
 --- Lightweight unit testing module that integrates well into the LÖVE framework.
 -- @module lovecase
--- @author Fabian Staacke
+-- @author binaryfs
 -- @copyright 2020
 -- @license https://opensource.org/licenses/MIT
 
@@ -11,10 +11,10 @@ local TestReport = require(BASE .. ".TestReport")
 local lovecase = {
   _NAME = "lovecase",
   _DESCRIPTION = "Lightweight unit testing module that integrates well into the LÖVE framework",
-  _VERSION = "1.0.0",
+  _VERSION = "1.0.1",
   _URL = "https://github.com/binaryfs/lua-lovecase",
   _LICENSE = "MIT License",
-  _COPYRIGHT = "Copyright (c) 2020 Fabian Staacke",
+  _COPYRIGHT = "Copyright (c) 2020 binaryfs",
 
   --- The pattern that is used to detect test files if no custom pattern is specified.
   defaultTestFilePattern = "%-test%.lua$"
@@ -80,8 +80,8 @@ end
 --- Run all unit test files from the specified directory.
 --
 -- @param path The directory path
--- @param[opt=false] Search for test files recursively
--- @param[opt] The pattern for detecting test files. Set to false to use the default pattern.
+-- @param[opt=false] recursive Search for test files recursively
+-- @param[opt] pattern The pattern for detecting test files. Set to false to use the default pattern.
 --   The default pattern searches for files that end with "-test.lua".
 -- @param[opt] report The report that should receive the test results. If none is given,
 --   a new report ist created internally.

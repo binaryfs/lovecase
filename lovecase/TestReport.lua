@@ -1,6 +1,6 @@
 --- The TestReport class encapsulates the result of a test set.
 -- @classmod lovecase.TestReport
--- @author Fabian Staacke
+-- @author binaryfs
 -- @copyright 2020
 -- @license https://opensource.org/licenses/MIT
 

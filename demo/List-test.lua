@@ -1,5 +1,5 @@
 -- Unit tests for the List class.
--- @author Fabian Staacke
+-- @author binaryfs
 -- @copyright 2020
 -- @license https://opensource.org/licenses/MIT
 

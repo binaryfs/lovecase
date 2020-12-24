@@ -1,6 +1,6 @@
 --- The TestSet class represents a collection of test cases.
 -- @classmod lovecase.TestSet
--- @author Fabian Staacke
+-- @author binaryfs
 -- @copyright 2020
 -- @license https://opensource.org/licenses/MIT
 
@@ -19,6 +19,11 @@ end
 -- @param typename The type identifier
 -- @param func The equality function. The function expects the two values to be compared
 --   as arguments and should return true if the values are considered equal.
+--
+-- @usage
+-- test:addEqualityCheck("Point", function(p1, p2)
+--   return p1.x == p2.x and p1.y == p2.y
+-- end)
 function TestSet:addEqualityCheck(typeId, func)
   assert(type(func) == "function", "Function expected")
   self._equalityChecks[typeId] = func
@@ -28,6 +33,11 @@ end
 --
 -- @param func The type checking function. The function expects the value whose type is
 --   to be determined and should return the type identifier if successful and false otherwise.
+--
+-- @usage
+-- test:addTypeCheck(function(value)
+--   return Point.isInstance(value) and "Point" or false
+-- end)
 function TestSet:addTypeCheck(func)
   assert(type(func) == "function", "Function expected")
   table.insert(self._typeChecks, func)

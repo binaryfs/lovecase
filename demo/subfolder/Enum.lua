@@ -1,7 +1,7 @@
 --- Simple Enum class.
 -- This class is used to demonstrate the lovecase module.
 -- @classmod Enum
--- @author Fabian Staacke
+-- @author binaryfs
 -- @copyright 2020
 -- @license https://opensource.org/licenses/MIT
 
