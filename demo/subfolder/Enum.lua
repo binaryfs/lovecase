@@ -7,7 +7,6 @@
 
 local Enum = {}
 Enum.__index = Enum
-Enum._reverseMap = {}
 
 --- Return a new Enum instance with the specified cases.
 -- @param cases A table that represents the available enum cases
@@ -16,19 +15,14 @@ function Enum.new(cases)
   assert(type(cases) == "table", "Enum constructor requires a table")
 
   local enum = {}
-  Enum._reverseMap[enum] = {}
 
-  -- Add the array-based cases first. The array indices are used as values.
-  for index, value in ipairs(cases) do
-    enum[value] = index
-    Enum._reverseMap[enum][index] = value
-  end
-
-  -- Now add the hash-based cases.
   for key, value in pairs(cases) do
-    if not enum[key] then
+    if type(key) == "string" then
       enum[key] = value
-      Enum._reverseMap[enum][value] = key
+    elseif type(key) == "number" and type(value) == "string" then
+      enum[value] = key
+    else
+      error("Enum keys must be strings")
     end
   end
 
@@ -38,7 +32,22 @@ end
 --- Get the case of the specified value.
 -- @return The case or nil
 function Enum:caseOf(value)
-  return Enum._reverseMap[self][value]
+  for case, v in pairs(self) do
+    if v == value then
+      return case
+    end
+  end
+  return nil
+end
+
+--- Get the number of enum values.
+-- @return Number of values
+function Enum:length()
+  local length = 0
+  for _ in pairs(self) do
+    length = length + 1
+  end
+  return length
 end
 
 --- Verify that the enum contains a given value.
