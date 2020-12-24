@@ -4,6 +4,9 @@
 -- @copyright 2020
 -- @license https://opensource.org/licenses/MIT
 
+local BASE = (...):gsub("%.TestSet$", "")
+local helpers = require(BASE .. ".helpers")
+
 local TestSet = {}
 TestSet.__index = TestSet
 
@@ -24,9 +27,10 @@ end
 -- test:addEqualityCheck("Point", function(p1, p2)
 --   return p1.x == p2.x and p1.y == p2.y
 -- end)
-function TestSet:addEqualityCheck(typeId, func)
-  assert(type(func) == "function", "Function expected")
-  self._equalityChecks[typeId] = func
+function TestSet:addEqualityCheck(typename, func)
+  helpers.assertArgument(1, typename, "string")
+  helpers.assertArgument(2, func, "function")
+  self._equalityChecks[typename] = func
 end
 
 --- Add a custom type checking function to determine the type of custom tables.
@@ -39,7 +43,7 @@ end
 --   return Point.isInstance(value) and "Point" or false
 -- end)
 function TestSet:addTypeCheck(func)
-  assert(type(func) == "function", "Function expected")
+  helpers.assertArgument(1, func, "function")
   table.insert(self._typeChecks, func)
 end
 
@@ -49,8 +53,8 @@ end
 -- @param groupFunc A function that contains the grouped test cases. The function expects
 --   the TestSet instance as its only argument and doesn't return anything.
 function TestSet:group(groupName, groupFunc)
-  assert(type(groupName) == "string", "Name your test group")
-  assert(type(groupFunc) == "function", "Provide a group function")
+  helpers.assertArgument(1, groupName, "string")
+  helpers.assertArgument(2, groupFunc, "function")
 
   self:_pushGroup(groupName)
   groupFunc(self)
@@ -63,8 +67,8 @@ end
 -- @param testFunc A function that provides the test. The function expects the TestCase
 --   instance as its only argument and doesn't return anything.
 function TestSet:run(testName, testFunc)
-  assert(type(testName) == "string", "Name your test")
-  assert(type(testFunc) == "function", "Provide a test function")
+  helpers.assertArgument(1, testName, "string")
+  helpers.assertArgument(2, testFunc, "function")
 
   local passed, message = pcall(testFunc, self)
   -- Add the test result to the current group.
@@ -129,7 +133,7 @@ end
 -- @raise if the assertion fails
 function TestSet:assertError(func, message)
   if pcall(func) then
-    error(message or "The function was expected to throw an error")
+    error(message or "The function was expected to throw an error", 0)
   end
 end
 
@@ -144,10 +148,7 @@ end
 --- Get a string representation of the test set.
 -- @treturn string
 function TestSet:__tostring()
-  local mt = getmetatable(self)
-  local rawString = tostring(setmetatable(self, nil))
-  setmetatable(self, mt)
-  return string.format("<TestSet '%s' (%s)>", self._groupStack[1].name, rawString)
+  return string.format("<TestSet '%s' (%s)>", self._groupStack[1].name, helpers.rawtostring(self))
 end
 
 --- Internal function to write a report.

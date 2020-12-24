@@ -4,6 +4,9 @@
 -- @copyright 2020
 -- @license https://opensource.org/licenses/MIT
 
+local BASE = (...):gsub("%.TestReport$", "")
+local helpers = require(BASE .. ".helpers")
+
 local TestReport = {}
 TestReport.__index = TestReport
 
@@ -23,6 +26,8 @@ end
 -- @param groupName The group name
 -- @param groupFunc A function that provides the group closure
 function TestReport:addGroup(groupName, groupFunc)
+  helpers.assertArgument(1, groupName, "string")
+  helpers.assertArgument(2, groupFunc, "function")
   self:_writeLine(groupName)
   self._depth = self._depth + 1
   groupFunc(self)
@@ -34,7 +39,9 @@ end
 -- @param failed True for a failed test, false otherwise
 -- @param[opt] reason The error message if the test failed
 function TestReport:addResult(testName, failed, reason)
+  helpers.assertArgument(1, testName, "string")
   if failed then
+    helpers.assertArgument(3, reason, "string")
     self:_writeLine(TestReport.failedPrefix .. testName)
     self:_writeLine(reason, self._depth + 1)
     self._failed = self._failed + 1
@@ -62,17 +69,14 @@ end
 -- for i, line in report:lines() do
 --   print(i .. ". " .. line)
 -- end
-function TestReport:lines(callback)
+function TestReport:lines()
   return ipairs(self._lines)
 end
 
 --- Get a (technical) string representation of the report.
 -- @treturn string
 function TestReport:__tostring()
-  local mt = getmetatable(self)
-  local rawString = tostring(setmetatable(self, nil))
-  setmetatable(self, mt)
-  return string.format("<TestReport (%s)>", rawString)
+  return string.format("<TestReport (%s)>", helpers.rawtostring(self))
 end
 
 --- Write a test line into the report.
