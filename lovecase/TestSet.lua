@@ -14,9 +14,9 @@ function TestSet.isInstance(value)
   return type(value) == "table" and getmetatable(value) == TestSet
 end
 
---- Add a custom equality function for a given type.
+--- Add an equality function for a custom type.
 --
--- @param typename The type identifier
+-- @param typename The type identifier, determined by the type checker.
 -- @param func The equality function. The function expects the two values to be compared
 --   as arguments and should return true if the values are considered equal.
 --
@@ -29,9 +29,9 @@ function TestSet:addEqualityCheck(typeId, func)
   self._equalityChecks[typeId] = func
 end
 
---- Add a custom type checking function to determine the type of custom objects.
+--- Add a custom type checking function to determine the type of custom tables.
 --
--- @param func The type checking function. The function expects the value whose type is
+-- @param func The type checking function. The function expects a table whose type is
 --   to be determined and should return the type identifier if successful and false otherwise.
 --
 -- @usage
@@ -175,7 +175,8 @@ end
 -- @return true if the values are considered equal, false otherwise.
 function TestSet:_valuesEqual(value1, value2)
   local type1 = self:_determineType(value1)
-  if type1 == self:_determineType(value2) then
+  -- Restrict custom equality checks to tables.
+  if type(value1) == "table" and type1 == self:_determineType(value2) then
     local equalityCheck = self._equalityChecks[type1]
     if equalityCheck then
       return equalityCheck(value1, value2)
@@ -192,13 +193,17 @@ end
 -- @param value The value
 -- @return The value's type
 function TestSet:_determineType(value)
-  for _, typeCheck in ipairs(self._typeChecks) do
-    local result = typeCheck(value)
-    if result then
-      return result
+  local typeOfValue = type(value)
+  if typeOfValue == "table" then
+    -- Check if this table is a custom type.
+    for _, typeCheck in ipairs(self._typeChecks) do
+      local result = typeCheck(value)
+      if result then
+        return result
+      end
     end
   end
-  return type(value)
+  return typeOfValue
 end
 
 --- Push a new group onto the stack.
