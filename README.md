@@ -39,7 +39,7 @@ test:group("removeValue()", function(test)
 end)
 
 -- Grouping is optional, though.
-test:run("reverse() should reverse the order of values", function(test)
+test:run("reverse() should reverse the order of values", function()
   test:assertEqual(List.new{1,2,3,4}:reverse(), List.new{4,3,2,1})
 end)
 
@@ -57,6 +57,30 @@ You can also run all test files from a given directory (recursively, if you like
 
 ```lua
 local report = lovecase.runAllTestFiles("directory/with/tests")
+```
+
+And this is how a printed test report looks like:
+
+```
+List
+  equal()
+    PASSED: should return true for lists that are equal
+    PASSED: should return false for lists that are different
+  push()
+    PASSED: should add the specified values
+    PASSED: should not add nil values
+  clear()
+    PASSED: should remove all values
+  indexOf()
+    PASSED: should return index of given value
+    PASSED: should return false if value is not found
+  removeValue()
+    PASSED: should remove the specified value
+    PASSED: should return the removed value
+    FAILED: should return nil if value is not present
+      Result was expected to be false but was nil
+  reverse()
+    PASSED: should reverse the order of values
 ```
 
 ## Demo
