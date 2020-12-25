@@ -82,53 +82,55 @@ end
 --- Assert that the given value is true.
 --
 -- @param value The value
--- @param[opt] message Error message if the assertion fails
+-- @param[opt] name The name with which the value is shown in the error message
 --
 -- @raise if the assertion fails
-function TestSet:assertTrue(value, message)
-  self:assertEqual(value, true, message)
+function TestSet:assertTrue(value, name)
+  self:assertEqual(value, true, name)
 end
 
 --- Assert that the given value is false.
 --
 -- @param value The value
--- @param[opt] message Error message if the assertion fails
+-- @param[opt] name The name with which the value is shown in the error message
 --
 -- @raise if the assertion fails
-function TestSet:assertFalse(value, message)
-  self:assertEqual(value, false, message)
+function TestSet:assertFalse(value, name)
+  self:assertEqual(value, false, name)
 end
 
 --- Assert that a given value is equal to an expected value.
 --
--- @param actual The actual value
+-- @param value The actual value
 -- @param expected The expected value
--- @param[opt] message Error message if the assertion fails
+-- @param[opt] name The name with which the value is shown in the error message
 --
 -- @raise if the assertion fails
-function TestSet:assertEqual(actual, expected, message)
-  if not self:_valuesEqual(actual, expected) then
-    error(string.format(message or "Value was expected to be %s but was %s", expected, actual), 0)
+function TestSet:assertEqual(value, expected, name)
+  if not self:_valuesEqual(value, expected) then
+    error(string.format(
+      "%s was expected to be %s but was %s", name or "Value", expected, value
+    ), 0)
   end
 end
 
 --- Assert that a given value is not equal to another value.
 --
--- @param actual The actual value
+-- @param value The actual value
 -- @param unexpected The other value
--- @param[opt] message Error message if the assertion fails
+-- @param[opt] name The name with which the value is shown in the error message
 --
 -- @raise if the assertion fails
-function TestSet:assertNotEqual(actual, unexpected, message)
-  if self:_valuesEqual(actual, unexpected) then
-    error(string.format(message or "Value was not expected to be %s", unexpected), 0)
+function TestSet:assertNotEqual(value, unexpected, name)
+  if self:_valuesEqual(value, unexpected) then
+    error(string.format("%s was not expected to be %s", name or "Value", unexpected), 0)
   end
 end
 
 --- Assert that the given function throws an error when called.
 --
 -- @param func The function
--- @param[opt] message Error message if the assertion fails
+-- @param[opt] message The error message if the assertion fails
 --
 -- @raise if the assertion fails
 function TestSet:assertError(func, message)

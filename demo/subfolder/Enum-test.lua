@@ -8,13 +8,13 @@ local Enum = require "demo.subfolder.Enum"
 
 local test = lovecase.newTestSet("Enum")
 
-test:group("new()", function(test)
+test:group("new()", function()
   test:run("should create an enum from a sequence", function()
     local Color = Enum.new{"Red", "Green", "Blue"}
     test:assertEqual(Color:length(), 3)
-    test:assertEqual(Color.Red, 1)
-    test:assertEqual(Color.Green, 2)
-    test:assertEqual(Color.Blue, 3)
+    test:assertEqual(Color.Red, 1, "Red")
+    test:assertEqual(Color.Green, 2, "Green")
+    test:assertEqual(Color.Blue, 3, "Blue")
   end)
   test:run("should create an enum from a hash map", function()
     local Direction = Enum.new{Left = "left", Right = "right"}
@@ -31,7 +31,7 @@ test:group("new()", function(test)
   end)
 end)
 
-test:group("caseOf()", function(test)
+test:group("caseOf()", function()
   local Color = Enum.new{"Red", "Green", Blue = "blue"}
   test:run("should return the case of the given value", function()
     test:assertEqual(Color:caseOf(1), "Red")
@@ -43,7 +43,7 @@ test:group("caseOf()", function(test)
   end)
 end)
 
-test:group("verify()", function(test)
+test:group("verify()", function()
   local Direction = Enum.new{"Left", "Right"}
   test:run("should accept valid values", function()
     test:assertEqual(Direction:verify(1), 1)
@@ -56,7 +56,7 @@ test:group("verify()", function(test)
   end)
 end)
 
-test:run("should not be extensible", function(test)
+test:run("should not be extensible", function()
   local Direction = Enum.new{"Left", "Right"}
   test:assertError(function()
     Direction.Down = 3
