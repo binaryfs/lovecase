@@ -1,30 +1,31 @@
---- The TestReport class encapsulates the result of a test set.
--- @classmod lovecase.TestReport
--- @author binaryfs
--- @copyright 2020
--- @license https://opensource.org/licenses/MIT
-
 local BASE = (...):gsub("%.TestReport$", "")
 local helpers = require(BASE .. ".helpers")
 
+--- The TestReport class encapsulates the result of a test set.
+--- @class lovecase.TestReport
+--- @field protected _lines table
+--- @field protected _depth integer
+--- @field protected _failed integer
+--- @field protected _passed integer
 local TestReport = {}
 TestReport.__index = TestReport
 
-TestReport.indentSpaces = 4
-TestReport.failedPrefix = "FAILED: "
-TestReport.passedPrefix = "PASSED: "
-TestReport.resultLine = "\n\n%s of %s tests passing"
+TestReport.INDENT_SPACES = 4
+TestReport.FAILED_PREFIX = "FAILED: "
+TestReport.PASSED_PREFIX = "PASSED: "
+TestReport.RESULT_LINE = "\n\n%s of %s tests passing"
 
 --- Determine if the given value is an instance of the TestReport class.
--- @param value The value
--- @return True or false
+--- @param value any The value
+--- @return boolean
+--- @nodiscard
 function TestReport.isInstance(value)
   return type(value) == "table" and getmetatable(value) == TestReport
 end
 
 --- Add a group to the report.
--- @param groupName The group name
--- @param groupFunc A function that provides the group closure
+--- @param groupName string The group name
+--- @param groupFunc function A function that provides the group closure
 function TestReport:addGroup(groupName, groupFunc)
   helpers.assertArgument(1, groupName, "string")
   helpers.assertArgument(2, groupFunc, "function")
@@ -35,28 +36,29 @@ function TestReport:addGroup(groupName, groupFunc)
 end
 
 --- Add a test result to the report.
--- @param testName The name of the test
--- @param failed True for a failed test, false otherwise
--- @param[opt] reason The error message if the test failed
+--- @param testName string The name of the test
+--- @param failed boolean True for a failed test, false otherwise
+--- @param reason? string The error message if the test failed
 function TestReport:addResult(testName, failed, reason)
   helpers.assertArgument(1, testName, "string")
   if failed then
     helpers.assertArgument(3, reason, "string")
-    self:_writeLine(TestReport.failedPrefix .. testName)
-    self:_writeLine(reason, self._depth + 1)
+    self:_writeLine(self.FAILED_PREFIX .. testName)
+    self:_writeLine(reason or "Unknown reason", self._depth + 1)
     self._failed = self._failed + 1
   else
-    self:_writeLine(TestReport.passedPrefix .. testName)
+    self:_writeLine(self.PASSED_PREFIX .. testName)
     self._passed = self._passed + 1
   end
 end
 
 --- Get the test results formatted as string.
--- @return Test results as string
+--- @return string
+--- @nodiscard
 function TestReport:printResults()
   local report = table.concat(self._lines, "\n")
   local result = string.format(
-    TestReport.resultLine,
+    self.RESULT_LINE,
     self._passed,
     self._passed + self._failed
   )
@@ -64,26 +66,32 @@ function TestReport:printResults()
 end
 
 --- Get an iterator over the lines of the report.
--- @return ipairs iterator
--- @usage
--- for i, line in report:lines() do
---   print(i .. ". " .. line)
--- end
+---
+--- Usage:
+--- ```
+--- for i, line in report:lines() do
+---   print(i .. ". " .. line)
+--- end
+--- ```
+--- @return function
+--- @return table
+--- @return integer
 function TestReport:lines()
   return ipairs(self._lines)
 end
 
 --- Get a (technical) string representation of the report.
--- @treturn string
+--- @return string
 function TestReport:__tostring()
   return string.format("<TestReport (%s)>", helpers.rawtostring(self))
 end
 
 --- Write a test line into the report.
--- @param message The message to write
--- @param[opt] depth The indentation depth (overrides default) 
+--- @param message string The message to write
+--- @param depth? integer The indentation depth (overrides default)
+--- @protected
 function TestReport:_writeLine(message, depth)
-  local indent = string.rep(" ", TestReport.indentSpaces * (depth or self._depth))
+  local indent = string.rep(" ", self.INDENT_SPACES * (depth or self._depth))
   self._lines[#self._lines + 1] = indent .. message
 end
 

@@ -10,8 +10,8 @@ This is how a unit test file written with lovecase looks like:
 ```lua
 -- Unit tests for a List class.
 
-local lovecase = require "lovecase"
-local List = require "List"
+local lovecase = require("lovecase")
+local List = require("List")
 local test = lovecase.newTestSet("List")
 
 -- Add a check so that lovecase can detect List instances.
