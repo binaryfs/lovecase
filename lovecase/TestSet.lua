@@ -1,7 +1,8 @@
 local BASE = (...):gsub("%.TestSet$", "")
 local helpers = require(BASE .. ".helpers")
 
---- @alias lovecase.TestCallback fun(test: lovecase.TestSet)
+--- @alias lovecase.GroupFunc fun(test: lovecase.TestSet)
+--- @alias lovecase.TestFunc fun(test: lovecase.TestSet, ...: any)
 --- @alias lovecase.EqualityCheck fun(a: any, b: any): boolean
 --- @alias lovecase.TypeCheck fun(t: table): string|false
 
@@ -59,7 +60,7 @@ end
 
 --- Add a named test group.
 --- @param groupName string The group name
---- @param groupFunc lovecase.TestCallback A function that contains the grouped test cases
+--- @param groupFunc lovecase.GroupFunc A function that contains the grouped test cases
 function TestSet:group(groupName, groupFunc)
   helpers.assertArgument(1, groupName, "string")
   helpers.assertArgument(2, groupFunc, "function")
@@ -69,14 +70,31 @@ function TestSet:group(groupName, groupFunc)
   self:_popGroup()
 end
 
---- Run the specified test.
+--- Run the specified test with optional test data.
+---
+--- When specified, `testData` is expected to be a sequence of tables. The values of
+--- each table are unpacked and passed to the test function.
 --- @param testName string The name of the test
---- @param testFunc lovecase.TestCallback A function that provides the test
-function TestSet:run(testName, testFunc)
+--- @param testFunc lovecase.TestFunc A function that provides the test
+--- @param testData? table[] Optional test data for the test
+function TestSet:run(testName, testFunc, testData)
   helpers.assertArgument(1, testName, "string")
   helpers.assertArgument(2, testFunc, "function")
 
-  local passed, message = pcall(testFunc, self)
+  local passed, message
+
+  if testData then
+    helpers.assertArgument(3, testData, "table")
+    for i = 1, #testData do
+      passed, message = pcall(testFunc, self, unpack(testData[i]))
+      if not passed then
+        break
+      end
+    end
+  else
+    passed, message = pcall(testFunc, self)
+  end
+
   -- Add the test result to the current group.
   table.insert(self:_peekGroup(), {
     name = testName,
