@@ -21,7 +21,7 @@ test:group("equal()", function()
     test:assertEqual(List.new{1,2,3}, List.new{1,2,3})
     test:assertEqual(List.new(), List.new())
   end)
-  test:run("should return false for lists that are different", function(_, first, second)
+  test:run("should return false for lists that are different", function(first, second)
     test:assertNotEqual(List.new(first), List.new(second))
   end, {
     {{1,2,3}, {3,2,1}},

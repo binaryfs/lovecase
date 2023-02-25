@@ -1,8 +1,6 @@
 local BASE = (...):gsub("%.TestSet$", "")
 local helpers = require(BASE .. ".helpers")
 
---- @alias lovecase.GroupFunc fun(test: lovecase.TestSet)
---- @alias lovecase.TestFunc fun(test: lovecase.TestSet, ...: any)
 --- @alias lovecase.EqualityCheck fun(a: any, b: any): boolean
 --- @alias lovecase.TypeCheck fun(t: table): string|false
 
@@ -60,13 +58,13 @@ end
 
 --- Add a named test group.
 --- @param groupName string The group name
---- @param groupFunc lovecase.GroupFunc A function that contains the grouped test cases
+--- @param groupFunc function A function that contains the grouped test cases
 function TestSet:group(groupName, groupFunc)
   helpers.assertArgument(1, groupName, "string")
   helpers.assertArgument(2, groupFunc, "function")
 
   self:_pushGroup(groupName)
-  groupFunc(self)
+  groupFunc()
   self:_popGroup()
 end
 
@@ -75,7 +73,7 @@ end
 --- When specified, `testData` is expected to be a sequence of tables. The values of
 --- each table are unpacked and passed to the test function.
 --- @param testName string The name of the test
---- @param testFunc lovecase.TestFunc A function that provides the test
+--- @param testFunc fun(...: any) A function that provides the test
 --- @param testData? table[] Optional test data for the test
 function TestSet:run(testName, testFunc, testData)
   helpers.assertArgument(1, testName, "string")
@@ -86,13 +84,13 @@ function TestSet:run(testName, testFunc, testData)
   if testData then
     helpers.assertArgument(3, testData, "table")
     for i = 1, #testData do
-      passed, message = pcall(testFunc, self, unpack(testData[i]))
+      passed, message = pcall(testFunc, unpack(testData[i]))
       if not passed then
         break
       end
     end
   else
-    passed, message = pcall(testFunc, self)
+    passed, message = pcall(testFunc)
   end
 
   -- Add the test result to the current group.
