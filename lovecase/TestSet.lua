@@ -1,32 +1,71 @@
---- The TestSet class represents a collection of test cases.
--- @classmod lovecase.TestSet
--- @author binaryfs
--- @copyright 2020
--- @license https://opensource.org/licenses/MIT
-
 local BASE = (...):gsub("%.TestSet$", "")
 local helpers = require(BASE .. ".helpers")
+local TestReport = require(BASE .. ".TestReport")
 
+--- @alias lovecase.EqualityCheck fun(a: any, b: any): boolean
+--- @alias lovecase.TypeCheck fun(t: table): string|false
+
+--- Represents a collection of test results and sub groups.
+--- @class lovecase.TestGroup
+--- @field name string
+--- @field failed boolean True if one of the contained tests or sub groups failed
+--- @field results lovecase.TestResult[]
+--- @field subgroups lovecase.TestGroup[]
+
+--- Represents the result of a single test case.
+--- @class lovecase.TestResult
+--- @field name string
+--- @field failed boolean
+--- @field error string
+
+--- The TestSet class represents a collection of test cases.
+--- @class lovecase.TestSet
+--- @field protected _groupStack lovecase.TestGroup[]
+--- @field protected _typeChecks lovecase.TypeCheck[]
+--- @field protected _equalityChecks table<string, lovecase.EqualityCheck>
 local TestSet = {}
 TestSet.__index = TestSet
 
+--- Create a new test set.
+--- @param name string The name of the test set
+--- @return lovecase.TestSet
+--- @nodiscard
+function TestSet.new(name)
+  if type(name) ~= "string" or name == "" then
+    error("Please name your TestSet")
+  end
+
+  local instance = setmetatable({
+    _groupStack = {},
+    _typeChecks = {},
+    _equalityChecks = {},
+  }, TestSet)
+
+  instance:_pushGroup(name)
+  return instance
+end
+
 --- Determine if the given value is an instance of the TestSet class.
--- @param value The value
--- @return True or false
+--- @param value any
+--- @return boolean
+--- @nodiscard
 function TestSet.isInstance(value)
   return type(value) == "table" and getmetatable(value) == TestSet
 end
 
 --- Add an equality function for a custom type.
---
--- @param typename The type identifier, determined by the type checker.
--- @param func The equality function. The function expects the two values to be compared
---   as arguments and should return true if the values are considered equal.
---
--- @usage
--- test:addEqualityCheck("Point", function(p1, p2)
---   return p1.x == p2.x and p1.y == p2.y
--- end)
+---
+--- The equality function takes two arguments and should return true if the values
+--- are considered equal.
+---
+--- Usage:
+--- ```
+--- test:addEqualityCheck("Point", function(p1, p2)
+---   return p1.x == p2.x and p1.y == p2.y
+--- end)
+--- ```
+--- @param typename string The type identifier, determined by the type checker.
+--- @param func lovecase.EqualityCheck The equality function. 
 function TestSet:addEqualityCheck(typename, func)
   helpers.assertArgument(1, typename, "string")
   helpers.assertArgument(2, func, "function")
@@ -34,78 +73,91 @@ function TestSet:addEqualityCheck(typename, func)
 end
 
 --- Add a custom type checking function to determine the type of custom tables.
---
--- @param func The type checking function. The function expects a table whose type is
---   to be determined and should return the type identifier if successful and false otherwise.
---
--- @usage
--- test:addTypeCheck(function(value)
---   return Point.isInstance(value) and "Point" or false
--- end)
+---
+--- The type checking function expects a table whose type is to be determined and should
+--- return the type identifier if successful and false otherwise.
+---
+--- Usage:
+--- ```
+--- test:addTypeCheck(function(value)
+---   return Point.isInstance(value) and "Point" or false
+--- end)
+--- ```
+--- @param func lovecase.TypeCheck The type checking function
 function TestSet:addTypeCheck(func)
   helpers.assertArgument(1, func, "function")
   table.insert(self._typeChecks, func)
 end
 
 --- Add a named test group.
---
--- @param groupName The group name
--- @param groupFunc A function that contains the grouped test cases. The function expects
---   the TestSet instance as its only argument and doesn't return anything.
+--- @param groupName string The group name
+--- @param groupFunc function A function that contains the grouped test cases
 function TestSet:group(groupName, groupFunc)
   helpers.assertArgument(1, groupName, "string")
   helpers.assertArgument(2, groupFunc, "function")
 
   self:_pushGroup(groupName)
-  groupFunc(self)
+  groupFunc()
   self:_popGroup()
 end
 
---- Run the specified test.
---
--- @param testName The name of the test
--- @param testFunc A function that provides the test. The function expects the TestCase
---   instance as its only argument and doesn't return anything.
-function TestSet:run(testName, testFunc)
+--- Run the specified test with optional test data.
+---
+--- When specified, `testData` is expected to be a sequence of tables. The values of
+--- each table are unpacked and passed to the test function.
+--- @param testName string The name of the test
+--- @param testFunc fun(...: any) A function that provides the test
+--- @param testData? table[] Optional test data for the test
+function TestSet:run(testName, testFunc, testData)
   helpers.assertArgument(1, testName, "string")
   helpers.assertArgument(2, testFunc, "function")
 
-  local passed, message = pcall(testFunc, self)
-  -- Add the test result to the current group.
-  table.insert(self:_peekGroup(), {
+  local passed, message
+
+  if testData then
+    helpers.assertArgument(3, testData, "table")
+    for i = 1, #testData do
+      passed, message = pcall(testFunc, unpack(testData[i]))
+      if not passed then
+        break
+      end
+    end
+  else
+    passed, message = pcall(testFunc)
+  end
+
+  --- @type lovecase.TestResult
+  local result = {
     name = testName,
     failed = not passed,
     error = message
-  })
+  }
+
+  table.insert(self:_peekGroup().results, result)
+
+  if result.failed then
+    self:_markAsFailed()
+  end
 end
 
 --- Assert that the given value is true.
---
--- @param value The value
--- @param[opt] name The name with which the value is shown in the error message
---
--- @raise if the assertion fails
+--- @param value any The value
+--- @param name? string The name by which the value is displayed in the error message
 function TestSet:assertTrue(value, name)
   self:assertEqual(value, true, name)
 end
 
 --- Assert that the given value is false.
---
--- @param value The value
--- @param[opt] name The name with which the value is shown in the error message
---
--- @raise if the assertion fails
+--- @param value any The value
+--- @param name? string The name by which the value is displayed in the error message
 function TestSet:assertFalse(value, name)
   self:assertEqual(value, false, name)
 end
 
 --- Assert that a given value is equal to an expected value.
---
--- @param value The actual value
--- @param expected The expected value
--- @param[opt] name The name with which the value is shown in the error message
---
--- @raise if the assertion fails
+--- @param value any The actual value
+--- @param expected any The expected value
+--- @param name? string The name by which the value is displayed in the error message
 function TestSet:assertEqual(value, expected, name)
   if not self:_valuesEqual(value, expected) then
     error(string.format(
@@ -115,12 +167,9 @@ function TestSet:assertEqual(value, expected, name)
 end
 
 --- Assert that a given value is not equal to another value.
---
--- @param value The actual value
--- @param unexpected The other value
--- @param[opt] name The name with which the value is shown in the error message
---
--- @raise if the assertion fails
+--- @param value any The actual value
+--- @param unexpected any The other value
+--- @param name? string The name by which the value is displayed in the error message
 function TestSet:assertNotEqual(value, unexpected, name)
   if self:_valuesEqual(value, unexpected) then
     error(string.format("%s was not expected to be %s", name or "Value", unexpected), 0)
@@ -128,11 +177,8 @@ function TestSet:assertNotEqual(value, unexpected, name)
 end
 
 --- Assert that the given function throws an error when called.
---
--- @param func The function
--- @param[opt] message The error message if the assertion fails
---
--- @raise if the assertion fails
+--- @param func function The function
+--- @param message? string The error message if the assertion fails
 function TestSet:assertError(func, message)
   if pcall(func) then
     error(message or "The function was expected to throw an error", 0)
@@ -140,26 +186,28 @@ function TestSet:assertError(func, message)
 end
 
 --- Write the test results into the given report.
--- @param report The report (a TestReport instance)
--- @return The report
+--- @param report lovecase.TestReport The report
+--- @return lovecase.TestReport # The report
 function TestSet:writeReport(report)
+  assert(TestReport.isInstance(report), "TestReport expected, got " .. type(report))
   self:_writeReport(report, self._groupStack[1])
   return report
 end
 
 --- Get a string representation of the test set.
--- @treturn string
+--- @return string
 function TestSet:__tostring()
   return string.format("<TestSet '%s' (%s)>", self._groupStack[1].name, helpers.rawtostring(self))
 end
 
 --- Internal function to write a report.
--- @param report The report (a TestReport instance)
--- @param group The current test group to write into the report
+--- @param report lovecase.TestReport The report
+--- @param group lovecase.TestGroup The current test group to write into the report
+--- @protected
 function TestSet:_writeReport(report, group)
-  report:addGroup(group.name, function(report)
-    for _, test in ipairs(group) do
-      report:addResult(test.name, test.failed, test.error)
+  report:addGroup(group.name, group.failed, function()
+    for _, result in ipairs(group.results) do
+      report:addResult(result.name, result.failed, result.error)
     end
     for _, subgroup in ipairs(group.subgroups) do
       self:_writeReport(report, subgroup)
@@ -168,14 +216,15 @@ function TestSet:_writeReport(report, group)
 end
 
 --- Test if two given values are equal.
---
--- The equality operator == is used to compare the values. If both values
--- have the same type and there is an equality function available
--- for this type, the equality function is used instead. 
---
--- @param value1 The first value
--- @param value2 The second value
--- @return true if the values are considered equal, false otherwise.
+---
+--- The equality operator == is used to compare the values. If both values
+--- have the same type and there is an equality function available
+--- for this type, the equality function is used instead. 
+--- @param value1 any The first value
+--- @param value2 any The second value
+--- @return boolean # true if the values are considered equal, false otherwise.
+--- @nodiscard
+--- @protected
 function TestSet:_valuesEqual(value1, value2)
   local type1 = self:_determineType(value1)
   -- Restrict custom equality checks to tables.
@@ -189,12 +238,13 @@ function TestSet:_valuesEqual(value1, value2)
 end
 
 --- Determine the type of the given value.
---
--- If none of the registered type checks can determine the type, the type()
--- function of Lua is used as a fallback.
---
--- @param value The value
--- @return The value's type
+---
+--- If none of the registered type checks can determine the type, the type()
+--- function of Lua is used as a fallback.
+--- @param value any The value
+--- @return string The value's type
+--- @nodiscard
+--- @protected
 function TestSet:_determineType(value)
   local typeOfValue = type(value)
   if typeOfValue == "table" then
@@ -210,13 +260,17 @@ function TestSet:_determineType(value)
 end
 
 --- Push a new group onto the stack.
--- @param groupName The name of the group
+--- @param groupName string The name of the group
+--- @protected
 function TestSet:_pushGroup(groupName)
+  --- @type lovecase.TestGroup
   local newGroup = {
     name = groupName,
+    failed = false,
+    results = {},
     subgroups = {}
   }
-  
+
   if #self._groupStack > 0 then
     table.insert(self:_peekGroup().subgroups, newGroup)
   end
@@ -225,14 +279,24 @@ function TestSet:_pushGroup(groupName)
 end
 
 --- Remove the topmost group from the stack.
+--- @protected
 function TestSet:_popGroup()
   assert(table.remove(self._groupStack), "Cannot pop empty stack")
 end
 
 --- Get the topmost group from the stack.
--- @return The topmost group
+--- @return table # The topmost group
+--- @protected
 function TestSet:_peekGroup()
   return self._groupStack[#self._groupStack]
+end
+
+--- Mark all groups on the stack as failed.
+--- @protected
+function TestSet:_markAsFailed()
+  for i = #self._groupStack, 1, -1 do
+    self._groupStack[i].failed = true
+  end
 end
 
 return TestSet

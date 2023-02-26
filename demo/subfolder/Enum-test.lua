@@ -1,10 +1,7 @@
 -- Unit tests for the Enum class.
--- @author binaryfs
--- @copyright 2020
--- @license https://opensource.org/licenses/MIT
 
-local lovecase = require "lovecase"
-local Enum = require "demo.subfolder.Enum"
+local lovecase = require("lovecase")
+local Enum = require("demo.subfolder.Enum")
 
 local test = lovecase.newTestSet("Enum")
 
@@ -46,12 +43,12 @@ end)
 test:group("verify()", function()
   local Direction = Enum.new{"Left", "Right"}
   test:run("should accept valid values", function()
-    test:assertEqual(Direction:verify(1), 1)
-    test:assertEqual(Direction:verify(2), 2)
+    test:assertEqual(Direction:assert(1), 1)
+    test:assertEqual(Direction:assert(2), 2)
   end)
   test:run("should raise an error for unknown values", function()
     test:assertError(function()
-      Direction:verify(7)
+      Direction:assert(7)
     end)
   end)
 end)

@@ -1,10 +1,7 @@
 -- Unit tests for the List class.
--- @author binaryfs
--- @copyright 2020
--- @license https://opensource.org/licenses/MIT
 
-local lovecase = require "lovecase"
-local List = require "demo.List"
+local lovecase = require("lovecase")
+local List = require("demo.List")
 
 local test = lovecase.newTestSet("List")
 
@@ -24,11 +21,13 @@ test:group("equal()", function()
     test:assertEqual(List.new{1,2,3}, List.new{1,2,3})
     test:assertEqual(List.new(), List.new())
   end)
-  test:run("should return false for lists that are different", function()
-    test:assertNotEqual(List.new{1,2,3}, List.new{3,2,1})
-    test:assertNotEqual(List.new{1,2,3}, List.new{1,2})
-    test:assertNotEqual(List.new{1,2,3}, List.new())
-  end)
+  test:run("should return false for lists that are different", function(first, second)
+    test:assertNotEqual(List.new(first), List.new(second))
+  end, {
+    {{1,2,3}, {3,2,1}},
+    {{1,2,3}, {1,2}},
+    {{1,2,3}, {}}
+  })
 end)
 
 test:group("push()", function()
@@ -58,8 +57,8 @@ test:group("indexOf()", function()
   test:run("should return index of given value", function()
     test:assertEqual(List.new{6,7,8,9}:indexOf(8), 3)
   end)
-  test:run("should return false if value is not found", function()
-    test:assertFalse(List.new{6,7,8,9}:indexOf(1))
+  test:run("should return nil if value is not found", function()
+    test:assertEqual(List.new{6,7,8,9}:indexOf(1), nil)
   end)
 end)
 

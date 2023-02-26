@@ -1,18 +1,13 @@
 --- Internal utility functions.
--- @module lovecase.helpers
--- @author binaryfs
--- @copyright 2020
--- @license https://opensource.org/licenses/MIT
 
 local M = {}
 
 --- Check if the specified argument is of the expected type.
--- @param index The index of the argument, starting with 1
--- @param value The value of the argument
--- @param expectedType The expected type of the argument as a string
--- @param[opt=3] level The error level
--- @return The input value
--- @raise The argument's value is not of the expected type
+--- @param index integer The index of the argument, starting with 1
+--- @param value any The value of the argument
+--- @param expectedType string The expected type of the argument as a string
+--- @param level? integer The error level
+--- @return string value The input value
 function M.assertArgument(index, value, expectedType, level)
   local valueType = type(value)
   if valueType ~= expectedType then
@@ -25,10 +20,11 @@ function M.assertArgument(index, value, expectedType, level)
 end
 
 --- Convert the specified value to a string.
--- Works like Lua's tostring function, but without calling the __tostring
--- metamethod on tables.
--- @param value The value to be converted
--- @return The converted value
+---
+--- Works like Lua's tostring function, but without calling the `__tostring`
+--- metamethod on tables.
+--- @param value any The value to be converted
+--- @return any # The converted value
 function M.rawtostring(value)
   if type(value) ~= "table" then
     return tostring(value)

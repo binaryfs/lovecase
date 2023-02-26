@@ -1,7 +1,7 @@
 # lua-lovecase
-Lightweight unit testing module written in Lua that integrates well into the [LÖVE](https://love2d.org/) framework.
+Lightweight unit testing module written in LuaJIT that integrates well into the [LÖVE](https://love2d.org/) framework.
 
-lovecase was built to be used in LÖVE 11.x with LuaJIT but might work in earlier versions just as well.
+lovecase was built to be used in LÖVE 11.x but might work in earlier versions just as well. It does not provide any kind of mocking framework and also does not even try to isolate your code. So the unit tests defined by lovecase do not match the accepted definition of unit tests very well.
 
 ## Example
 
@@ -10,8 +10,9 @@ This is how a unit test file written with lovecase looks like:
 ```lua
 -- Unit tests for a List class.
 
-local lovecase = require "lovecase"
-local List = require "List"
+local lovecase = require("lovecase")
+local List = require("List")
+
 local test = lovecase.newTestSet("List")
 
 -- Add a check so that lovecase can detect List instances.
@@ -26,7 +27,7 @@ test:addEqualityCheck("List", function(list1, list2)
 end)
 
 -- You can group several test cases together (subgroups work as well).
-test:group("removeValue()", function(test)
+test:group("removeValue()", function()
   test:run("should remove the specified value", function()
     local list = List.new{1,2,9,3}
     list:removeValue(9)
@@ -43,6 +44,18 @@ test:run("reverse() should reverse the order of values", function()
   test:assertEqual(List.new{1,2,3,4}:reverse(), List.new{4,3,2,1})
 end)
 
+-- You can provide your test cases with test data.
+-- The test case is repeated for each row in the test data table.
+test:run("remove() should remove the value at the specified index", function (input, index, expected)
+  local actual = List.new(input)
+  actual:remove(index)
+  test:assertEqual(actual, List.new(expected))
+end, {
+  { {6,7,8,9}, 1, {7,8,9} },
+  { {6,7,8,9}, 4, {6,7,8} },
+})
+
+-- Your unit test files have to return the test set.
 return test
 ```
 
@@ -81,6 +94,17 @@ List
       Result was expected to be false but was nil
   reverse()
     PASSED: should reverse the order of values
+```
+
+You can also override the formatting options for the report:
+
+```lua
+local report = lovecase.newTestReport({
+  onlyFailures = true, -- Show only failed tests
+  indentSpaces = 3,
+})
+lovecase.runTestFile("path/to/List-test.lua", report)
+print(report:printResults())
 ```
 
 ## Demo
