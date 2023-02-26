@@ -1,16 +1,49 @@
 local BASE = (...):gsub("%.TestSet$", "")
 local helpers = require(BASE .. ".helpers")
+local TestReport = require(BASE .. ".TestReport")
 
 --- @alias lovecase.EqualityCheck fun(a: any, b: any): boolean
 --- @alias lovecase.TypeCheck fun(t: table): string|false
 
+--- Represents a collection of test results and sub groups.
+--- @class lovecase.TestGroup
+--- @field name string
+--- @field failed boolean True if one of the contained tests or sub groups failed
+--- @field results lovecase.TestResult[]
+--- @field subgroups lovecase.TestGroup[]
+
+--- Represents the result of a single test case.
+--- @class lovecase.TestResult
+--- @field name string
+--- @field failed boolean
+--- @field error string
+
 --- The TestSet class represents a collection of test cases.
 --- @class lovecase.TestSet
---- @field protected _groupStack table[]
+--- @field protected _groupStack lovecase.TestGroup[]
 --- @field protected _typeChecks lovecase.TypeCheck[]
 --- @field protected _equalityChecks table<string, lovecase.EqualityCheck>
 local TestSet = {}
 TestSet.__index = TestSet
+
+--- Create a new test set.
+--- @param name string The name of the test set
+--- @return lovecase.TestSet
+--- @nodiscard
+function TestSet.new(name)
+  if type(name) ~= "string" or name == "" then
+    error("Please name your TestSet")
+  end
+
+  local instance = setmetatable({
+    _groupStack = {},
+    _typeChecks = {},
+    _equalityChecks = {},
+  }, TestSet)
+
+  instance:_pushGroup(name)
+  return instance
+end
 
 --- Determine if the given value is an instance of the TestSet class.
 --- @param value any
@@ -22,7 +55,7 @@ end
 
 --- Add an equality function for a custom type.
 ---
---- The equality function takes to arguments and should return true if the values
+--- The equality function takes two arguments and should return true if the values
 --- are considered equal.
 ---
 --- Usage:
@@ -93,12 +126,18 @@ function TestSet:run(testName, testFunc, testData)
     passed, message = pcall(testFunc)
   end
 
-  -- Add the test result to the current group.
-  table.insert(self:_peekGroup(), {
+  --- @type lovecase.TestResult
+  local result = {
     name = testName,
     failed = not passed,
     error = message
-  })
+  }
+
+  table.insert(self:_peekGroup().results, result)
+
+  if result.failed then
+    self:_markAsFailed()
+  end
 end
 
 --- Assert that the given value is true.
@@ -150,6 +189,7 @@ end
 --- @param report lovecase.TestReport The report
 --- @return lovecase.TestReport # The report
 function TestSet:writeReport(report)
+  assert(TestReport.isInstance(report), "TestReport expected, got " .. type(report))
   self:_writeReport(report, self._groupStack[1])
   return report
 end
@@ -162,12 +202,12 @@ end
 
 --- Internal function to write a report.
 --- @param report lovecase.TestReport The report
---- @param group table The current test group to write into the report
+--- @param group lovecase.TestGroup The current test group to write into the report
 --- @protected
 function TestSet:_writeReport(report, group)
-  report:addGroup(group.name, function(report)
-    for _, test in ipairs(group) do
-      report:addResult(test.name, test.failed, test.error)
+  report:addGroup(group.name, group.failed, function()
+    for _, result in ipairs(group.results) do
+      report:addResult(result.name, result.failed, result.error)
     end
     for _, subgroup in ipairs(group.subgroups) do
       self:_writeReport(report, subgroup)
@@ -223,8 +263,11 @@ end
 --- @param groupName string The name of the group
 --- @protected
 function TestSet:_pushGroup(groupName)
+  --- @type lovecase.TestGroup
   local newGroup = {
     name = groupName,
+    failed = false,
+    results = {},
     subgroups = {}
   }
 
@@ -246,6 +289,14 @@ end
 --- @protected
 function TestSet:_peekGroup()
   return self._groupStack[#self._groupStack]
+end
+
+--- Mark all groups on the stack as failed.
+--- @protected
+function TestSet:_markAsFailed()
+  for i = #self._groupStack, 1, -1 do
+    self._groupStack[i].failed = true
+  end
 end
 
 return TestSet

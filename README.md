@@ -96,6 +96,17 @@ List
     PASSED: should reverse the order of values
 ```
 
+You can also override the formatting options for the report:
+
+```lua
+local report = lovecase.newTestReport({
+  onlyFailures = true, -- Show only failed tests
+  indentSpaces = 3,
+})
+lovecase.runTestFile("path/to/List-test.lua", report)
+print(report:printResults())
+```
+
 ## Demo
 
 lovecase ships with a LÖVE demo script that provides some working example test cases.

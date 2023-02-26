@@ -3,17 +3,45 @@ local helpers = require(BASE .. ".helpers")
 
 --- The TestReport class encapsulates the result of a test set.
 --- @class lovecase.TestReport
---- @field protected _lines table
+--- @field protected _options table
+--- @field protected _lines string[]
 --- @field protected _depth integer
---- @field protected _failed integer
---- @field protected _passed integer
+--- @field protected _failedCount integer
+--- @field protected _passedCount integer
 local TestReport = {}
 TestReport.__index = TestReport
 
-TestReport.INDENT_SPACES = 4
-TestReport.FAILED_PREFIX = "FAILED: "
-TestReport.PASSED_PREFIX = "PASSED: "
-TestReport.RESULT_LINE = "\n\n%s of %s tests passing"
+--- Create a new test report.
+---
+--- See `lovecase.newTestReport` for a list of valid options. 
+--- @param options? table
+--- @return lovecase.TestReport
+--- @nodiscard
+function TestReport.new(options)
+  local instance = setmetatable({
+    _options = {
+      indentSpaces = 4,
+      failedPrefix = "FAILED: ",
+      failedResultLine = "\n\n%s tests failed",
+      passedPrefix = "PASSED: ",
+      passedResultLine = "\n\n%s out of %s tests passed",
+      onlyFailures = false,
+    },
+    _lines = {},
+    _depth = 0,
+    _failedCount = 0,
+    _passedCount = 0
+  }, TestReport)
+
+  if options then
+    helpers.assertArgument(1, options, "table")
+    for key, value in pairs(options) do
+      instance._options[key] = value
+    end
+  end
+
+  return instance
+end
 
 --- Determine if the given value is an instance of the TestReport class.
 --- @param value any The value
@@ -25,14 +53,17 @@ end
 
 --- Add a group to the report.
 --- @param groupName string The group name
+--- @param failed boolean True if one of the contained tests failed
 --- @param groupFunc function A function that provides the group closure
-function TestReport:addGroup(groupName, groupFunc)
+function TestReport:addGroup(groupName, failed, groupFunc)
   helpers.assertArgument(1, groupName, "string")
   helpers.assertArgument(2, groupFunc, "function")
-  self:_writeLine(groupName)
-  self._depth = self._depth + 1
-  groupFunc(self)
-  self._depth = self._depth - 1
+  if failed or not self._options.onlyFailures then
+    self:_writeLine(groupName)
+    self._depth = self._depth + 1
+    groupFunc()
+    self._depth = self._depth - 1
+  end
 end
 
 --- Add a test result to the report.
@@ -43,12 +74,12 @@ function TestReport:addResult(testName, failed, reason)
   helpers.assertArgument(1, testName, "string")
   if failed then
     helpers.assertArgument(3, reason, "string")
-    self:_writeLine(self.FAILED_PREFIX .. testName)
-    self:_writeLine(reason or "Unknown reason", self._depth + 1)
-    self._failed = self._failed + 1
-  else
-    self:_writeLine(self.PASSED_PREFIX .. testName)
-    self._passed = self._passed + 1
+    self:_writeLine(self._options.failedPrefix .. testName)
+    self:_writeLine(reason --[[@as string]], self._depth + 1)
+    self._failedCount = self._failedCount + 1
+  elseif not self._options.onlyFailures then
+    self:_writeLine(self._options.passedPrefix .. testName)
+    self._passedCount = self._passedCount + 1
   end
 end
 
@@ -57,11 +88,16 @@ end
 --- @nodiscard
 function TestReport:printResults()
   local report = table.concat(self._lines, "\n")
-  local result = string.format(
-    self.RESULT_LINE,
-    self._passed,
-    self._passed + self._failed
-  )
+  local result
+  if self._options.onlyFailures then
+    result = string.format(self._options.failedResultLine, self._failedCount)
+  else
+    result = string.format(
+      self._options.passedResultLine,
+      self._passedCount,
+      self._passedCount + self._failedCount
+    )
+  end
   return report .. result
 end
 
@@ -91,7 +127,7 @@ end
 --- @param depth? integer The indentation depth (overrides default)
 --- @protected
 function TestReport:_writeLine(message, depth)
-  local indent = string.rep(" ", self.INDENT_SPACES * (depth or self._depth))
+  local indent = string.rep(" ", self._options.indentSpaces * (depth or self._depth))
   self._lines[#self._lines + 1] = indent .. message
 end
 

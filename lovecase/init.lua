@@ -9,38 +9,35 @@ local lovecase = {
   _URL = "https://github.com/binaryfs/lua-lovecase",
   _LICENSE = "MIT License",
   _COPYRIGHT = "Copyright (c) 2020 binaryfs",
-
-  --- The pattern that is used to detect test files if no custom pattern is specified.
-  TEST_FILE_PATTERN = "%-test%.lua$"
 }
+
+--- The pattern that is used to detect test files if no custom pattern is specified.
+local TEST_FILE_PATTERN = "%-test%.lua$"
 
 --- Create a new test set.
 --- @param name string The name of the test set
 --- @return lovecase.TestSet
 --- @nodiscard
+--- @see lovecase.TestSet.new
 function lovecase.newTestSet(name)
-  assert(type(name) == "string" and name ~= "", "Please name your TestSet")
-
-  local instance = setmetatable({
-    _groupStack = {},
-    _typeChecks = {},
-    _equalityChecks = {}
-  }, TestSet)
-
-  instance:_pushGroup(name)
-  return instance
+  return TestSet.new(name)
 end
 
 --- Create a new test report.
+---
+--- The `options` table can have the folloing fields:
+--- * `indentSpaces` - Number of spaces per indention level
+--- * `onlyFailures` - If true, show only failed tests
+--- * `failedPrefix` - Prefix for failed tests
+--- * `failedResultLine` - Format string to show number of failed tests
+--- * `passedPrefix` - Prefix for passed tests
+--- * `passedResultLine` - Format string to show number of passed tests
+--- @param options? table
 --- @return lovecase.TestReport
 --- @nodiscard
-function lovecase.newTestReport()
-  return setmetatable({
-    _lines = {},
-    _depth = 0,
-    _failed = 0,
-    _passed = 0
-  }, TestReport)
+--- @see lovecase.TestReport.new
+function lovecase.newTestReport(options)
+  return TestReport.new(options)
 end
 
 --- Run the specified unit test file and return the result.
@@ -78,7 +75,7 @@ end
 --- @param report? lovecase.TestReport The report into which the test results are to be written
 --- @return lovecase.TestReport # A report with the test results
 function lovecase.runAllTestFiles(path, recursive, pattern, report)
-  pattern = pattern or lovecase.TEST_FILE_PATTERN
+  pattern = pattern or TEST_FILE_PATTERN
   report = report or lovecase.newTestReport()
   local items = love.filesystem.getDirectoryItems(path)
 
