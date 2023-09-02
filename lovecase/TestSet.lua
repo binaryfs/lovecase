@@ -145,14 +145,14 @@ end
 --- @param value any The value
 --- @param message? string The message to show if the assertion fails
 function TestSet:assertTrue(value, message)
-  self:assertEqual(value, true, message)
+  self:assertSame(value, true, message)
 end
 
 --- Assert that the given value is false.
 --- @param value any The value
 --- @param message? string The message to show if the assertion fails
 function TestSet:assertFalse(value, message)
-  self:assertEqual(value, false, message)
+  self:assertSame(value, false, message)
 end
 
 --- Assert that a given value is equal to an expected value.
@@ -172,6 +172,26 @@ end
 function TestSet:assertNotEqual(value, unexpected, message)
   if self:_valuesEqual(value, unexpected) then
     error(message or string.format("Expected and actual are equal: %s", unexpected), 0)
+  end
+end
+
+--- Assert that a given value is the same as the expected value.
+--- @param value any The actual value
+--- @param expected any The expected value
+--- @param message? string The message to show if the assertion fails
+function TestSet:assertSame(value, expected, message)
+  if not rawequal(value, expected) then
+    error(message or string.format("Expected value: %s | Actual value: %s", expected, value), 0)
+  end
+end
+
+--- Assert that a given value is not the same as the expected value.
+--- @param value any The actual value
+--- @param expected any The expected value
+--- @param message? string The message to show if the assertion fails
+function TestSet:assertNotSame(value, expected, message)
+  if rawequal(value, expected) then
+    error(message or string.format("Expected and actual are the same: %s", value), 0)
   end
 end
 
