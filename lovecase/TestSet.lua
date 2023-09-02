@@ -245,14 +245,22 @@ end
 --- @nodiscard
 --- @protected
 function TestSet:_valuesEqual(value1, value2)
-  local type1 = self:_determineType(value1)
-  -- Restrict custom equality checks to tables.
-  if type(value1) == "table" and type1 == self:_determineType(value2) then
-    local equalityCheck = self._equalityChecks[type1]
-    if equalityCheck then
-      return equalityCheck(value1, value2)
+  if type(value1) == "table" and type(value2) == "table" then
+    local type1 = self:_determineType(value1)
+
+    if type1 == self:_determineType(value2) then
+      local equalityCheck = self._equalityChecks[type1]
+
+      if equalityCheck then
+        return equalityCheck(value1, value2)
+      end
+    end
+
+    if not helpers.hasMetamethod(value1, "__eq") then
+      return helpers.compareTables(value1, value2)
     end
   end
+
   return value1 == value2
 end
 

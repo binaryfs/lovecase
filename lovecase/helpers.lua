@@ -35,4 +35,41 @@ function M.rawtostring(value)
   return rawString
 end
 
+--- Determine if the metatable of `t` contains the specified method.
+--- @param t table
+--- @param methodName string
+--- @return boolean
+--- @nodiscard
+function M.hasMetamethod(t, methodName)
+  local mt = getmetatable(t)
+  return mt and type(mt[methodName]) == "function" or false
+end
+
+--- Return true if the specified tables are equal, false otherwise.
+---
+--- This function performs a flat comparison (not a deep comparison).
+--- @param table1 table
+--- @param table2 table
+--- @return boolean equal
+--- @nodiscard
+function M.compareTables(table1, table2)
+  if type(table1) == "table" and table1 == table2 then
+    return true
+  end
+
+  for key, value in pairs(table1) do
+    if table2[key] ~= value then
+      return false
+    end
+  end
+
+  for key in pairs(table2) do
+    if table1[key] == nil then
+      return false
+    end
+  end
+
+  return true
+end
+
 return M
