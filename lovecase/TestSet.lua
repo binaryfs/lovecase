@@ -35,6 +35,7 @@ function TestSet.new(name)
     error("Please name your TestSet")
   end
 
+  --- @type lovecase.TestSet
   local instance = setmetatable({
     _groupStack = {},
     _typeChecks = {},
@@ -142,43 +143,41 @@ end
 
 --- Assert that the given value is true.
 --- @param value any The value
---- @param name? string The name by which the value is displayed in the error message
-function TestSet:assertTrue(value, name)
-  self:assertEqual(value, true, name)
+--- @param message? string The message to show if the assertion fails
+function TestSet:assertTrue(value, message)
+  self:assertEqual(value, true, message)
 end
 
 --- Assert that the given value is false.
 --- @param value any The value
---- @param name? string The name by which the value is displayed in the error message
-function TestSet:assertFalse(value, name)
-  self:assertEqual(value, false, name)
+--- @param message? string The message to show if the assertion fails
+function TestSet:assertFalse(value, message)
+  self:assertEqual(value, false, message)
 end
 
 --- Assert that a given value is equal to an expected value.
 --- @param value any The actual value
 --- @param expected any The expected value
---- @param name? string The name by which the value is displayed in the error message
-function TestSet:assertEqual(value, expected, name)
+--- @param message? string The message to show if the assertion fails
+function TestSet:assertEqual(value, expected, message)
   if not self:_valuesEqual(value, expected) then
-    error(string.format(
-      "%s was expected to be %s but was %s", name or "Value", expected, value
-    ), 0)
+    error(message or string.format("Expected value: %s | Actual value: %s", expected, value), 0)
   end
 end
 
 --- Assert that a given value is not equal to another value.
 --- @param value any The actual value
 --- @param unexpected any The other value
---- @param name? string The name by which the value is displayed in the error message
-function TestSet:assertNotEqual(value, unexpected, name)
+--- @param message? string The message to show if the assertion fails
+function TestSet:assertNotEqual(value, unexpected, message)
   if self:_valuesEqual(value, unexpected) then
-    error(string.format("%s was not expected to be %s", name or "Value", unexpected), 0)
+    error(message or string.format("Expected and actual are equal: %s", unexpected), 0)
   end
 end
 
 --- Assert that the given function throws an error when called.
 --- @param func function The function
---- @param message? string The error message if the assertion fails
+--- @param message? string The message to show if the assertion fails
 function TestSet:assertError(func, message)
   if pcall(func) then
     error(message or "The function was expected to throw an error", 0)
