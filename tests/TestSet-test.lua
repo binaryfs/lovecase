@@ -1,7 +1,6 @@
 local lovecase = require("lovecase")
-local helpers = require("lovecase.helpers")
 
-local test = lovecase.newTestSet("TestReport")
+local test = lovecase.newTestSet("TestSet")
 
 local CaselessString = {}
 CaselessString.__index = CaselessString
@@ -117,11 +116,15 @@ test:group("assertAlmostEqual()", function()
     test:assertAlmostEqual(3.14159265358979323846, 3.14159265358979324)
     test:assertAlmostEqual(math.sqrt(2) * math.sqrt(2), 2)
     test:assertAlmostEqual(-math.sqrt(2) * math.sqrt(2), -2)
+    test:assertAlmostEqual({999, 100000000000000.01}, {999, 100000000000000.011})
     test:assertError(function ()
       test:assertAlmostEqual(100.01, 100.011)
     end)
     test:assertError(function ()
       test:assertAlmostEqual(0.001, 0.0010000001)
+    end)
+    test:assertError(function ()
+      test:assertAlmostEqual({999, 100.01}, {999, 100.011})
     end)
   end)
 end)
