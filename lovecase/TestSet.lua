@@ -3,7 +3,7 @@ local helpers = require(BASE .. ".helpers")
 local serial = require(BASE .. ".serial")
 local TestReport = require(BASE .. ".TestReport")
 
---- @alias lovecase.EqualityCheck fun(a: any, b: any): boolean
+--- @alias lovecase.EqualityCheck fun(a: any, b: any, almost: boolean): boolean
 --- @alias lovecase.TypeCheck fun(t: table): string|false
 
 --- Represents a collection of test results and sub groups.
@@ -143,69 +143,97 @@ function TestSet:run(testName, testFunc, testData)
 end
 
 --- Assert that the given value is true.
---- @param value any The value
+--- @param value any
 --- @param message? string The message to show if the assertion fails
 function TestSet:assertTrue(value, message)
   self:assertSame(value, true, message)
 end
 
 --- Assert that the given value is false.
---- @param value any The value
+--- @param value any
 --- @param message? string The message to show if the assertion fails
 function TestSet:assertFalse(value, message)
   self:assertSame(value, false, message)
 end
 
 --- Assert that a given value is equal to an expected value.
---- @param value any The actual value
---- @param expected any The expected value
+--- @param value any
+--- @param expectedValue any
 --- @param message? string The message to show if the assertion fails
-function TestSet:assertEqual(value, expected, message)
-  if not self:_valuesEqual(value, expected) then
-    error(message or string.format(
-      "Expected value: %s | Actual value: %s",
-      serial.serialize(expected),
-      serial.serialize(value)
+function TestSet:assertEqual(value, expectedValue, message)
+  if not self:_compareValues(value, expectedValue) then
+    error(string.format(
+      message or "Actual value: %s | Expected value: %s",
+      serial.serialize(value),
+      serial.serialize(expectedValue)
     ), 0)
   end
 end
 
 --- Assert that a given value is not equal to another value.
---- @param value any The actual value
---- @param unexpected any The other value
+--- @param first any
+--- @param second any
 --- @param message? string The message to show if the assertion fails
-function TestSet:assertNotEqual(value, unexpected, message)
-  if self:_valuesEqual(value, unexpected) then
+function TestSet:assertNotEqual(first, second, message)
+  if self:_compareValues(first, second) then
     error(message or string.format(
-      "Unexpected and actual are equal: %s",
-      serial.serialize(unexpected)
+      "Both values are equal: %s",
+      serial.serialize(first)
+    ), 0)
+  end
+end
+
+--- Assert that a given value is almost equal to an expected value.
+--- @param value any
+--- @param expectedValue any
+--- @param message? string The message to show if the assertion fails
+function TestSet:assertAlmostEqual(value, expectedValue, message)
+  if not self:_compareValues(value, expectedValue, true) then
+    error(string.format(
+      message or "Actual value: %s | Expected value: %s",
+      serial.serialize(value),
+      serial.serialize(expectedValue)
+    ), 0)
+  end
+end
+
+--- Assert that two values are not almost equal.
+--- @param first any
+--- @param second any
+--- @param message? string The message to show if the assertion fails
+function TestSet:assertNotAlmostEqual(first, second, message)
+  if self:_compareValues(first, second, true) then
+    error(string.format(
+      message or "Both values are almost equal: %s | %s",
+      serial.serialize(first),
+      serial.serialize(second)
     ), 0)
   end
 end
 
 --- Assert that a given value is the same as the expected value.
---- @param value any The actual value
---- @param expected any The expected value
+--- @param value any
+--- @param expectedValue any
 --- @param message? string The message to show if the assertion fails
-function TestSet:assertSame(value, expected, message)
-  if not rawequal(value, expected) then
-    error(message or string.format(
-      "Expected value: %s | Actual value: %s",
-      tostring(expected),
-      tostring(value)
+function TestSet:assertSame(value, expectedValue, message)
+  if not rawequal(value, expectedValue) then
+    error(string.format(
+      message or "Actual value: %s | Expected value: %s",
+      tostring(value),
+      tostring(expectedValue)
     ), 0)
   end
 end
 
 --- Assert that a given value is not the same as the expected value.
---- @param value any The actual value
---- @param expected any The expected value
+--- @param first any
+--- @param second any
 --- @param message? string The message to show if the assertion fails
-function TestSet:assertNotSame(value, expected, message)
-  if rawequal(value, expected) then
-    error(message or string.format(
-      "Unexpected and actual are the same: %s",
-      tostring(value)
+function TestSet:assertNotSame(first, second, message)
+  if rawequal(first, second) then
+    error(string.format(
+      message or "Both values are the same: %s",
+      tostring(first)
     ), 0)
   end
 end
@@ -249,42 +277,36 @@ function TestSet:_writeReport(report, group)
   end)
 end
 
---- Test if two given values are equal.
+--- Test if the two given values are equal.
 ---
 --- The equality operator == is used to compare the values. If both values
 --- have the same type and there is an equality function available
 --- for this type, the equality function is used instead. 
---- @param value1 any The first value
---- @param value2 any The second value
---- @return boolean # true if the values are considered equal, false otherwise.
+--- @param first any
+--- @param second any
+--- @param almost boolean? If true, compare numbers with tolerance (default: false)
+--- @return boolean equal
 --- @nodiscard
 --- @protected
-function TestSet:_valuesEqual(value1, value2)
-  if type(value1) == "table" and type(value2) == "table" then
-    local type1 = self:_determineType(value1)
+function TestSet:_compareValues(first, second, almost)
+  local firstType = self:_determineType(first)
 
-    if type1 == self:_determineType(value2) then
-      local equalityCheck = self._equalityChecks[type1]
-
-      if equalityCheck then
-        return equalityCheck(value1, value2)
-      end
-    end
-
-    if not helpers.hasMetamethod(value1, "__eq") then
-      return helpers.compareTables(value1, value2)
-    end
+  if type(first) == "table"
+    and firstType == self:_determineType(second)
+    and self._equalityChecks[firstType]
+  then
+    return self._equalityChecks[firstType](first, second, almost == true)
   end
 
-  return value1 == value2
+  return helpers.compareValues(first, second, almost == true)
 end
 
 --- Determine the type of the given value.
 ---
 --- If none of the registered type checks can determine the type, the type()
 --- function of Lua is used as a fallback.
---- @param value any The value
---- @return string The value's type
+--- @param value any
+--- @return string type
 --- @nodiscard
 --- @protected
 function TestSet:_determineType(value)

@@ -67,7 +67,8 @@ end
 --- @package
 function serializeValue(value, tokens)
   if type(value) == "table" then
-    if helpers.hasMetamethod(value, "__tostring") then
+    local mt = getmetatable(value)
+    if mt and mt.__tostring then
       table.insert(tokens, tostring(value))
     else
       serializeTable(value, tokens)

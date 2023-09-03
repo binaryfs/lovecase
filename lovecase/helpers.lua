@@ -35,30 +35,59 @@ function M.rawtostring(value)
   return rawString
 end
 
---- Determine if the metatable of `t` contains the specified method.
---- @param t table
---- @param methodName string
---- @return boolean
+--- Return true if the specified primitive values are equal, false otherwise.
+--- All values except tables are considered primitive.
+--- @param first any
+--- @param second any
+--- @param almost boolean? If true, compare numbers with tolerance (default: false)
+--- @return boolean equal
 --- @nodiscard
-function M.hasMetamethod(t, methodName)
-  local mt = getmetatable(t)
-  return mt and type(mt[methodName]) == "function" or false
+--- @package
+local function comparePrimitives(first, second, almost)
+  if almost == true and type(first) == "number" and type(second) == "number" then
+    return M.almostEqual(first, second)
+  end
+  return first == second
+end
+
+--- Return true if the specified values are equal, false otherwise.
+--- @param first any
+--- @param second any
+--- @param almost boolean? If true, compare numbers with tolerance (default: false)
+--- @return boolean equal
+--- @nodiscard
+function M.compareValues(first, second, almost)
+  if type(first) == "table" and type(second) == "table" then
+    local firstMt = getmetatable(first)
+    local secondMt = getmetatable(second)
+
+    -- Compare with __eq metamethod, if available.
+    if firstMt and secondMt and firstMt.__eq == secondMt.__eq then
+      return first == second
+    end
+
+    return M.compareTables(first, second, almost)
+  end
+
+  return comparePrimitives(first, second, almost)
 end
 
 --- Return true if the specified tables are equal, false otherwise.
 ---
---- This function performs a flat comparison (not a deep comparison).
+--- This function does *not* perform a deep comparison. Only the first level of the tables
+--- is compared.
 --- @param table1 table
 --- @param table2 table
+--- @param almost boolean? If true, compare numbers with tolerance (default: false)
 --- @return boolean equal
 --- @nodiscard
-function M.compareTables(table1, table2)
+function M.compareTables(table1, table2, almost)
   if type(table1) == "table" and table1 == table2 then
     return true
   end
 
   for key, value in pairs(table1) do
-    if table2[key] ~= value then
+    if not comparePrimitives(table2[key], value, almost) then
       return false
     end
   end
@@ -70,6 +99,17 @@ function M.compareTables(table1, table2)
   end
 
   return true
+end
+
+--- Return whether the two numbers `a` and `b` are close to each other.
+--- @param a number
+--- @param b number
+--- @param epsilon number? Tolerated margin of error (default: 1e-09)
+--- @return boolean equal
+--- @nodiscard
+function M.almostEqual(a, b, epsilon)
+  epsilon = epsilon or 1e-09
+  return math.abs(a - b) <= epsilon * math.max(math.abs(a), math.abs(b))
 end
 
 return M
