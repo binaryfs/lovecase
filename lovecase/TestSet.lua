@@ -1,5 +1,6 @@
 local BASE = (...):gsub("%.TestSet$", "")
 local helpers = require(BASE .. ".helpers")
+local serial = require(BASE .. ".serial")
 local TestReport = require(BASE .. ".TestReport")
 
 --- @alias lovecase.EqualityCheck fun(a: any, b: any): boolean
@@ -161,7 +162,11 @@ end
 --- @param message? string The message to show if the assertion fails
 function TestSet:assertEqual(value, expected, message)
   if not self:_valuesEqual(value, expected) then
-    error(message or string.format("Expected value: %s | Actual value: %s", expected, value), 0)
+    error(message or string.format(
+      "Expected value: %s | Actual value: %s",
+      serial.serialize(expected),
+      serial.serialize(value)
+    ), 0)
   end
 end
 
@@ -171,7 +176,10 @@ end
 --- @param message? string The message to show if the assertion fails
 function TestSet:assertNotEqual(value, unexpected, message)
   if self:_valuesEqual(value, unexpected) then
-    error(message or string.format("Expected and actual are equal: %s", unexpected), 0)
+    error(message or string.format(
+      "Unexpected and actual are equal: %s",
+      serial.serialize(unexpected)
+    ), 0)
   end
 end
 
@@ -181,7 +189,11 @@ end
 --- @param message? string The message to show if the assertion fails
 function TestSet:assertSame(value, expected, message)
   if not rawequal(value, expected) then
-    error(message or string.format("Expected value: %s | Actual value: %s", expected, value), 0)
+    error(message or string.format(
+      "Expected value: %s | Actual value: %s",
+      tostring(expected),
+      tostring(value)
+    ), 0)
   end
 end
 
@@ -191,7 +203,10 @@ end
 --- @param message? string The message to show if the assertion fails
 function TestSet:assertNotSame(value, expected, message)
   if rawequal(value, expected) then
-    error(message or string.format("Expected and actual are the same: %s", value), 0)
+    error(message or string.format(
+      "Unexpected and actual are the same: %s",
+      tostring(value)
+    ), 0)
   end
 end
 
