@@ -163,7 +163,7 @@ end
 function TestSet:assertEqual(value, expectedValue, message)
   if not self:_compareValues(value, expectedValue) then
     error(string.format(
-      message or "Actual value: %s | Expected value: %s",
+      message or "Value is %s but was expected to be %s",
       serial.serialize(value),
       serial.serialize(expectedValue)
     ), 0)
@@ -190,7 +190,7 @@ end
 function TestSet:assertAlmostEqual(value, expectedValue, message)
   if not self:_compareValues(value, expectedValue, true) then
     error(string.format(
-      message or "Actual value: %s | Expected value: %s",
+      message or "Value is %s but was expected to be almost %s",
       serial.serialize(value),
       serial.serialize(expectedValue)
     ), 0)
@@ -218,7 +218,7 @@ end
 function TestSet:assertSame(value, expectedValue, message)
   if not rawequal(value, expectedValue) then
     error(string.format(
-      message or "Actual value: %s | Expected value: %s",
+      message or "Value is %s but was expected to be %s",
       tostring(value),
       tostring(expectedValue)
     ), 0)
@@ -277,11 +277,22 @@ function TestSet:_writeReport(report, group)
   end)
 end
 
---- Test if the two given values are equal.
----
---- The equality operator == is used to compare the values. If both values
---- have the same type and there is an equality function available
---- for this type, the equality function is used instead. 
+--- @param first any
+--- @param second any
+--- @return function?
+--- @nodiscard
+--- @protected
+function TestSet:_getEqualityCheck(first, second)
+  local firstType = self:_determineType(first)
+
+  if firstType == self:_determineType(second) then
+    return self._equalityChecks[firstType]
+  end
+
+  return nil
+end
+
+--- Return true if the specified values are considered equal, false otherwise.
 --- @param first any
 --- @param second any
 --- @param almost boolean? If true, compare numbers with tolerance (default: false)
@@ -289,16 +300,55 @@ end
 --- @nodiscard
 --- @protected
 function TestSet:_compareValues(first, second, almost)
-  local firstType = self:_determineType(first)
+  if type(first) == "table" and type(second) == "table" then
+    local equalityCheck = self:_getEqualityCheck(first, second)
 
-  if type(first) == "table"
-    and firstType == self:_determineType(second)
-    and self._equalityChecks[firstType]
-  then
-    return self._equalityChecks[firstType](first, second, almost == true)
+    if equalityCheck then
+      return equalityCheck(first, second, almost == true)
+    end
+
+    local firstMt, secondMt = getmetatable(first), getmetatable(second)
+
+    -- Compare with __eq metamethod, if available.
+    if firstMt and secondMt and firstMt.__eq == secondMt.__eq then
+      return first == second
+    end
+
+    return self:_compareTables(first, second, almost)
   end
 
-  return helpers.compareValues(first, second, almost == true)
+  if almost == true and type(first) == "number" and type(second) == "number" then
+    return helpers.almostEqual(first, second)
+  end
+
+  return first == second
+end
+
+--- Return true if the specified tables are equal, false otherwise.
+--- @param table1 table
+--- @param table2 table
+--- @param almost boolean? If true, compare numbers with tolerance (default: false)
+--- @return boolean equal
+--- @nodiscard
+--- @protected
+function TestSet:_compareTables(table1, table2, almost)
+  if type(table1) == "table" and table1 == table2 then
+    return true
+  end
+
+  for key, value in pairs(table1) do
+    if not self:_compareValues(table2[key], value, almost) then
+      return false
+    end
+  end
+
+  for key in pairs(table2) do
+    if table1[key] == nil then
+      return false
+    end
+  end
+
+  return true
 end
 
 --- Determine the type of the given value.

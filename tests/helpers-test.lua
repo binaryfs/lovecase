@@ -3,25 +3,28 @@ local lovecase = require("lovecase")
 
 local test = lovecase.newTestSet("helpers")
 
-test:group("compareTables()", function()
-  test:run("should return true if the specified tables are equal", function(first, second)
-    test:assertTrue(helpers.compareTables(first, second))
-  end, {
-    {{1, 2, 3}, {1, 2, 3}},
-    {{}, {}},
-    {{a = 1, b = 2}, {a = 1, b = 2}},
-    {{a = 1, b = 2, c = 3}, {b = 2, c = 3, a = 1}},
-    {{3; a = 1, b = 2}, {a = 1, b = 2; 3}}
-  })
-  test:run("should return false if the specified tables are not equal", function(first, second)
-    test:assertFalse(helpers.compareTables(first, second))
-  end, {
-    {{1, 2, 3}, {1, 2}},
-    {{1, 2, 3}, {1, 2, "3"}},
-    {{a = 1, b = 2}, {a = 1, b = 22}},
-    {{a = 1, b = 2, c = 3}, {a = 1, b = 2}},
-    {{1, {}, 3}, {1, {}, 3}}
-  })
+test:group("assertArgument()", function()
+  test:run("should check if the specified argument is of the expected type", function()
+    helpers.assertArgument(1, "abc", "string")
+    helpers.assertArgument(2, 321, "number")
+    test:assertError(function ()
+      helpers.assertArgument(3, "abc", "boolean")
+    end)
+  end)
+end)
+
+test:group("rawtostring()", function()
+  test:run("should ignore the __tostring metamethod", function()
+    local t = {}
+    local tableString = tostring(t)
+    setmetatable(t, {__tostring = function () return "foo" end})
+    test:assertEqual(tostring(t), "foo")
+    test:assertEqual(helpers.rawtostring(t), tableString)
+  end)
+  test:run("should also work for primitive types", function()
+    test:assertEqual(helpers.rawtostring(123), "123")
+    test:assertEqual(helpers.rawtostring("abc"), "abc")
+  end)
 end)
 
 return test

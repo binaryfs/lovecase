@@ -1,8 +1,5 @@
 -- Utilities to serialize tables.
 
-local BASE = (...):gsub("%.serial$", "")
-local helpers = require(BASE .. ".helpers")
-
 local M = {}
 
 -- Forward declarations
