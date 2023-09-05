@@ -146,6 +146,10 @@ test:addEqualityCheck("table", function (table1, table2)
 end)
 ```
 
+## TODOs
+
+- Add more unit tests for lovecase
+
 ## License
 
 MIT License (see LICENSE file in project root)

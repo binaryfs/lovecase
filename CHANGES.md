@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - `TestSet:assertAlmostEqual` and `TestSet:assertNotAlmostEqual` compare numbers with a tolerance, to allow a larger margin of error when comparing floating point numbers
 - Serialize tables in assertion errors if no `__tostring` metamethod exists
 - Relational assertion methods: `assertSmallerThan`, `assertSmallerThanEqual`, `assertGreaterThan` and `assertGreaterThanEqual`
+- `TestReport:isFailed` checks if at least one test in a set failed (backported from roguelove)
 
 ### Changed
 
