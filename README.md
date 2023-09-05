@@ -13,34 +13,34 @@ This is how a unit test file written with lovecase looks like:
 local lovecase = require("lovecase")
 local List = require("List")
 
-local test = lovecase.newTestSet("List")
+local test = lovecase.newTestSet("List Tests")
 
 -- Add a check so that lovecase can detect List instances.
-test:addTypeCheck(function(value)
+test:addTypeCheck(function (value)
   return List.isInstance(value) and "List" or false
 end)
 
 -- Add a check so that lovecase can compare lists.
 -- Alternatively you could also overload the == operator for lists.
-test:addEqualityCheck("List", function(list1, list2)
+test:addEqualityCheck("List", function (list1, list2)
   return list1:equal(list2)
 end)
 
 -- You can group several test cases together (subgroups work as well).
-test:group("removeValue()", function()
-  test:run("should remove the specified value", function()
+test:group("removeValue()", function ()
+  test:run("should remove the specified value", function ()
     local list = List.new{1,2,9,3}
     list:removeValue(9)
     test:assertEqual(list, List.new{1,2,3})
   end)
-  test:run("should return nil if value is not present", function()
+  test:run("should return nil if value is not present", function ()
     local list = List.new()
     test:assertEqual(list:removeValue(1), nil)
   end)
 end)
 
 -- Grouping is optional, though.
-test:run("reverse() should reverse the order of values", function()
+test:run("reverse() should reverse the order of values", function ()
   test:assertEqual(List.new{1,2,3,4}:reverse(), List.new{4,3,2,1})
 end)
 
@@ -75,7 +75,7 @@ local report = lovecase.runAllTestFiles("directory/with/tests")
 And this is how a printed test report looks like:
 
 ```
-List
+List Tests
   equal()
     PASSED: should return true for lists that are equal
     PASSED: should return false for lists that are different
@@ -107,9 +107,44 @@ lovecase.runTestFile("path/to/List-test.lua", report)
 print(report:printResults())
 ```
 
+## Assertions
+
+This is a list of all available assertion methods:
+
+- `assertEqual`
+- `assertNotEqual`
+- `assertSmallerThan`
+- `assertSmallerThanEqual`
+- `assertGreaterThan`
+- `assertGreaterThanEqual`
+- `assertTrue`
+- `assertFalse`
+- `assertSame` – Always uses the raw `==` operator for equality checks.
+- `assertNotSame` – Always uses the raw `==` operator for equality checks.
+- `assertAlmostEqual` – Compares numbers with tolerance (also works with nested tables).
+- `assertNotAlmostEqual` – Compares numbers with tolerance (also works with nested tables).
+- `assertError` – Tests if a function raises an error.
+
 ## Demo
 
 lovecase ships with a LÖVE demo script that provides some working example test cases.
+
+## FAQ
+
+### How are tables compared for equality?
+
+lovecase performs a deep comparison between two tables to determine if they are equivalent. This only works under two conditions:
+
+- There is no custom equality check for the tables in question
+- The tables in question cannot be compared by the `__eq` metamethod
+
+To override this behaviour, you can just define your own equality check for tables:
+
+```lua
+test:addEqualityCheck("table", function (table1, table2)
+  return myCustomEqualityCheckForTables(table1, table2)
+end)
+```
 
 ## License
 
