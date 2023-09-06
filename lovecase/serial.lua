@@ -5,6 +5,20 @@ local M = {}
 -- Forward declarations
 local serializeValue
 
+--- @param t table
+--- @param value any
+--- @return integer?
+--- @nodiscard
+--- @package
+local function indexOf(t, value)
+  for index = 0, #t do
+    if t[index] == value then
+      return index
+    end
+  end
+  return nil
+ end
+
 --- Serialize a primitive value to a sequence of string tokens.
 --- @param value any The value to serialize
 --- @param tokens table The table that receives the tokens
@@ -30,16 +44,18 @@ end
 --- Serialize a table to a squence of string tokens.
 --- @param tbl table The table to serialize
 --- @param tokens table The table that receives the tokens
+--- @param stack table Stack of tables to detect loops
 --- @package
-local function serializeTable(tbl, tokens)
+local function serializeTable(tbl, tokens, stack)
   local knownKeys = {}
 
+  table.insert(stack, tbl)
   table.insert(tokens, "{")
 
   -- Write the index part of the table.
   if #tbl > 0 then
     for index, value in ipairs(tbl) do
-      serializeValue(value, tokens)
+      serializeValue(value, tokens, stack)
       table.insert(tokens, ",")
       knownKeys[index] = true
     end
@@ -50,25 +66,27 @@ local function serializeTable(tbl, tokens)
     if not knownKeys[key] then
       serializeKey(key, tokens)
       table.insert(tokens, "=")
-      serializeValue(value, tokens)
+      serializeValue(value, tokens, stack)
       table.insert(tokens, ",")
     end
   end
 
   table.insert(tokens, "}")
+  table.remove(stack)
 end
 
 --- Serialize a value to a sequence of string tokens.
 --- @param value any The value to serialize
 --- @param tokens table The table that receives the tokens
+--- @param stack table Stack of tables to detect loops
 --- @package
-function serializeValue(value, tokens)
+function serializeValue(value, tokens, stack)
   if type(value) == "table" then
     local mt = getmetatable(value)
-    if mt and mt.__tostring then
-      table.insert(tokens, tostring(value))
+    if (mt and mt.__tostring) or indexOf(stack, value) then
+      table.insert(tokens, string.format("%q", tostring(value)))
     else
-      serializeTable(value, tokens)
+      serializeTable(value, tokens, stack)
     end
   else
     serializePrimitive(value, tokens)
@@ -81,7 +99,7 @@ end
 --- @nodiscard
 function M.serialize(value)
   local tokens = {}
-  serializeValue(value, tokens)
+  serializeValue(value, tokens, {})
   return table.concat(tokens)
 end
 
