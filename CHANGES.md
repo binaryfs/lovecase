@@ -3,6 +3,26 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.0] - 2023-09-05
+
+### Added
+
+- The new assertion methods `TestSet:assertSame` and `TestSet:assertNotSame` use `rawequal` for comparison
+- Some unit tests for the lovecase module
+- `TestSet:assertEqual` and `TestSet:assertNotEqual` perform a simple table comparison if no custom equality function exists and the __eq metamethod is not applicable
+- `TestSet:assertAlmostEqual` and `TestSet:assertNotAlmostEqual` compare numbers with a tolerance, to allow a larger margin of error when comparing floating point numbers
+- Serialize tables in assertion errors if no `__tostring` metamethod exists
+- Relational assertion methods: `assertSmallerThan`, `assertSmallerThanEqual`, `assertGreaterThan` and `assertGreaterThanEqual`
+- `TestReport:isFailed` checks if at least one test in a set failed (backported from roguelove)
+
+### Changed
+
+- BREAKING CHANGE: Replace `name` parameter in asserion functions with `message` parameter
+
+### Removed
+
+- The demo unit tests were removed in favor of the actual unit tests for lovecase
+
 ## [3.0.0] - 2023-02-26
 
 ### Added

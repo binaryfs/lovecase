@@ -1,8 +1,9 @@
 local BASE = (...):gsub("%.TestSet$", "")
 local helpers = require(BASE .. ".helpers")
+local serial = require(BASE .. ".serial")
 local TestReport = require(BASE .. ".TestReport")
 
---- @alias lovecase.EqualityCheck fun(a: any, b: any): boolean
+--- @alias lovecase.EqualityCheck fun(a: any, b: any, almost: boolean): boolean
 --- @alias lovecase.TypeCheck fun(t: table): string|false
 
 --- Represents a collection of test results and sub groups.
@@ -35,6 +36,7 @@ function TestSet.new(name)
     error("Please name your TestSet")
   end
 
+  --- @type lovecase.TestSet
   local instance = setmetatable({
     _groupStack = {},
     _typeChecks = {},
@@ -141,44 +143,160 @@ function TestSet:run(testName, testFunc, testData)
 end
 
 --- Assert that the given value is true.
---- @param value any The value
---- @param name? string The name by which the value is displayed in the error message
-function TestSet:assertTrue(value, name)
-  self:assertEqual(value, true, name)
+--- @param value any
+--- @param message? string The message to show if the assertion fails
+function TestSet:assertTrue(value, message)
+  self:assertSame(value, true, message)
 end
 
 --- Assert that the given value is false.
---- @param value any The value
---- @param name? string The name by which the value is displayed in the error message
-function TestSet:assertFalse(value, name)
-  self:assertEqual(value, false, name)
+--- @param value any
+--- @param message? string The message to show if the assertion fails
+function TestSet:assertFalse(value, message)
+  self:assertSame(value, false, message)
 end
 
 --- Assert that a given value is equal to an expected value.
---- @param value any The actual value
---- @param expected any The expected value
---- @param name? string The name by which the value is displayed in the error message
-function TestSet:assertEqual(value, expected, name)
-  if not self:_valuesEqual(value, expected) then
+--- @param value any
+--- @param expectedValue any
+--- @param message? string The message to show if the assertion fails
+function TestSet:assertEqual(value, expectedValue, message)
+  if not self:_compareValues(value, expectedValue) then
     error(string.format(
-      "%s was expected to be %s but was %s", name or "Value", expected, value
+      message or "Value %s was expected to be %s",
+      serial.serialize(value),
+      serial.serialize(expectedValue)
     ), 0)
   end
 end
 
 --- Assert that a given value is not equal to another value.
---- @param value any The actual value
---- @param unexpected any The other value
---- @param name? string The name by which the value is displayed in the error message
-function TestSet:assertNotEqual(value, unexpected, name)
-  if self:_valuesEqual(value, unexpected) then
-    error(string.format("%s was not expected to be %s", name or "Value", unexpected), 0)
+--- @param first any
+--- @param second any
+--- @param message? string The message to show if the assertion fails
+function TestSet:assertNotEqual(first, second, message)
+  if self:_compareValues(first, second) then
+    error(message or string.format(
+      "Both values are equal: %s",
+      serial.serialize(first)
+    ), 0)
+  end
+end
+
+--- Assert that a given value is almost equal to an expected value.
+--- @param value any
+--- @param expectedValue any
+--- @param message? string The message to show if the assertion fails
+function TestSet:assertAlmostEqual(value, expectedValue, message)
+  if not self:_compareValues(value, expectedValue, true) then
+    error(string.format(
+      message or "Value %s was expected to be almost %s",
+      serial.serialize(value),
+      serial.serialize(expectedValue)
+    ), 0)
+  end
+end
+
+--- Assert that two values are not almost equal.
+--- @param first any
+--- @param second any
+--- @param message? string The message to show if the assertion fails
+function TestSet:assertNotAlmostEqual(first, second, message)
+  if self:_compareValues(first, second, true) then
+    error(string.format(
+      message or "Both values are almost equal: %s | %s",
+      serial.serialize(first),
+      serial.serialize(second)
+    ), 0)
+  end
+end
+
+--- Assert that a given value is the same as the expected value.
+--- @param value any
+--- @param expectedValue any
+--- @param message? string The message to show if the assertion fails
+function TestSet:assertSame(value, expectedValue, message)
+  if not rawequal(value, expectedValue) then
+    error(string.format(
+      message or "Value %s was expected to be %s",
+      tostring(value),
+      tostring(expectedValue)
+    ), 0)
+  end
+end
+
+--- Assert that a given value is not the same as the expected value.
+--- @param first any
+--- @param second any
+--- @param message? string The message to show if the assertion fails
+function TestSet:assertNotSame(first, second, message)
+  if rawequal(first, second) then
+    error(string.format(
+      message or "Both values are the same: %s",
+      tostring(first)
+    ), 0)
+  end
+end
+
+--- Assert that the first value is smaller than the second value.
+--- @param first any
+--- @param second any
+--- @param message? string The message to show if the assertion fails
+function TestSet:assertSmallerThan(first, second, message)
+  if first >= second then
+    error(string.format(
+      message or "Value %s is not smaller than %s",
+      serial.serialize(first),
+      serial.serialize(second)
+    ), 0)
+  end
+end
+
+--- Assert that the first value is smaller than or equal to the second value.
+--- @param first any
+--- @param second any
+--- @param message? string The message to show if the assertion fails
+function TestSet:assertSmallerThanEqual(first, second, message)
+  if first > second then
+    error(string.format(
+      message or "Value %s is not smaller than or equal to %s",
+      serial.serialize(first),
+      serial.serialize(second)
+    ), 0)
+  end
+end
+
+--- Assert that the first value is greater than the second value.
+--- @param first any
+--- @param second any
+--- @param message? string The message to show if the assertion fails
+function TestSet:assertGreaterThan(first, second, message)
+  if first <= second then
+    error(string.format(
+      message or "Value %s is not greater than %s",
+      serial.serialize(first),
+      serial.serialize(second)
+    ), 0)
+  end
+end
+
+--- Assert that the first value is greater than or equal to the second value.
+--- @param first any
+--- @param second any
+--- @param message? string The message to show if the assertion fails
+function TestSet:assertGreaterThanEqual(first, second, message)
+  if first < second then
+    error(string.format(
+      message or "Value %s is not greater than or equal to %s",
+      serial.serialize(first),
+      serial.serialize(second)
+    ), 0)
   end
 end
 
 --- Assert that the given function throws an error when called.
 --- @param func function The function
---- @param message? string The error message if the assertion fails
+--- @param message? string The message to show if the assertion fails
 function TestSet:assertError(func, message)
   if pcall(func) then
     error(message or "The function was expected to throw an error", 0)
@@ -215,34 +333,86 @@ function TestSet:_writeReport(report, group)
   end)
 end
 
---- Test if two given values are equal.
----
---- The equality operator == is used to compare the values. If both values
---- have the same type and there is an equality function available
---- for this type, the equality function is used instead. 
---- @param value1 any The first value
---- @param value2 any The second value
---- @return boolean # true if the values are considered equal, false otherwise.
+--- @param first any
+--- @param second any
+--- @return function?
 --- @nodiscard
 --- @protected
-function TestSet:_valuesEqual(value1, value2)
-  local type1 = self:_determineType(value1)
-  -- Restrict custom equality checks to tables.
-  if type(value1) == "table" and type1 == self:_determineType(value2) then
-    local equalityCheck = self._equalityChecks[type1]
+function TestSet:_getEqualityCheck(first, second)
+  local firstType = self:_determineType(first)
+
+  if firstType == self:_determineType(second) then
+    return self._equalityChecks[firstType]
+  end
+
+  return nil
+end
+
+--- Return true if the specified values are considered equal, false otherwise.
+--- @param first any
+--- @param second any
+--- @param almost boolean? If true, compare numbers with tolerance (default: false)
+--- @return boolean equal
+--- @nodiscard
+--- @protected
+function TestSet:_compareValues(first, second, almost)
+  if type(first) == "table" and type(second) == "table" then
+    local equalityCheck = self:_getEqualityCheck(first, second)
+
     if equalityCheck then
-      return equalityCheck(value1, value2)
+      return equalityCheck(first, second, almost == true)
+    end
+
+    local firstMt, secondMt = getmetatable(first), getmetatable(second)
+
+    -- Compare with __eq metamethod, if available.
+    if firstMt and secondMt and firstMt.__eq == secondMt.__eq then
+      return first == second
+    end
+
+    return self:_compareTables(first, second, almost)
+  end
+
+  if almost == true and type(first) == "number" and type(second) == "number" then
+    return helpers.almostEqual(first, second)
+  end
+
+  return first == second
+end
+
+--- Return true if the specified tables are equal, false otherwise.
+--- @param table1 table
+--- @param table2 table
+--- @param almost boolean? If true, compare numbers with tolerance (default: false)
+--- @return boolean equal
+--- @nodiscard
+--- @protected
+function TestSet:_compareTables(table1, table2, almost)
+  if type(table1) == "table" and table1 == table2 then
+    return true
+  end
+
+  for key, value in pairs(table1) do
+    if not self:_compareValues(table2[key], value, almost) then
+      return false
     end
   end
-  return value1 == value2
+
+  for key in pairs(table2) do
+    if table1[key] == nil then
+      return false
+    end
+  end
+
+  return true
 end
 
 --- Determine the type of the given value.
 ---
 --- If none of the registered type checks can determine the type, the type()
 --- function of Lua is used as a fallback.
---- @param value any The value
---- @return string The value's type
+--- @param value any
+--- @return string type
 --- @nodiscard
 --- @protected
 function TestSet:_determineType(value)

@@ -35,4 +35,15 @@ function M.rawtostring(value)
   return rawString
 end
 
+--- Return whether the two numbers `a` and `b` are close to each other.
+--- @param a number
+--- @param b number
+--- @param epsilon number? Tolerated margin of error (default: 1e-09)
+--- @return boolean equal
+--- @nodiscard
+function M.almostEqual(a, b, epsilon)
+  epsilon = epsilon or 1e-09
+  return math.abs(a - b) <= epsilon * math.max(math.abs(a), math.abs(b))
+end
+
 return M

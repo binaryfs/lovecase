@@ -51,6 +51,13 @@ function TestReport.isInstance(value)
   return type(value) == "table" and getmetatable(value) == TestReport
 end
 
+--- Return true if the test set is failed, false otherwise.
+--- @return boolean
+--- @nodiscard
+function TestReport:isFailed()
+  return self._failedCount > 0
+end
+
 --- Add a group to the report.
 --- @param groupName string The group name
 --- @param failed boolean True if one of the contained tests failed
