@@ -1,4 +1,4 @@
-local BASE = (...):gsub("%.TestReport$", "")
+local BASE = (...):gsub("TestReport$", "")
 local helpers = require(BASE .. ".helpers")
 
 --- The TestReport class encapsulates the result of a test set.

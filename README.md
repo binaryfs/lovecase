@@ -1,4 +1,4 @@
-# lua-lovecase
+# lovecase
 Lightweight unit testing module written in LuaJIT that integrates well into the [LÖVE](https://love2d.org/) framework.
 
 lovecase was built to be used in LÖVE 11.x but might work in earlier versions just as well. It does not provide any kind of mocking framework and also does not even try to isolate your code. So the unit tests defined by lovecase do not match the accepted definition of unit tests very well.
@@ -10,7 +10,7 @@ This is how a unit test file written with lovecase looks like:
 ```lua
 -- Unit tests for a List class.
 
-local lovecase = require("lovecase")
+local lovecase = require("libs.lovecase")
 local List = require("List")
 
 local test = lovecase.newTestSet("List Tests")

@@ -1,7 +1,7 @@
-local BASE = (...):gsub("%.TestSet$", "")
-local helpers = require(BASE .. ".helpers")
-local serial = require(BASE .. ".serial")
-local TestReport = require(BASE .. ".TestReport")
+local BASE = (...):gsub("[^%.]*$", "")
+local helpers = require(BASE .. "helpers")
+local serial = require(BASE .. "serial")
+local TestReport = require(BASE .. "TestReport")
 
 --- @alias lovecase.EqualityCheck fun(a: any, b: any, almost: boolean): boolean
 --- @alias lovecase.TypeCheck fun(t: table): string|false

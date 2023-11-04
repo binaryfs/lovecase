@@ -1,4 +1,4 @@
-local lovecase = require("lovecase")
+local lovecase = require("init")
 
 local test = lovecase.newTestSet("TestSet")
 
