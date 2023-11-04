@@ -1,5 +1,5 @@
-local lovecase = require("lovecase")
-local serial = require("lovecase.serial")
+local lovecase = require("init")
+local serial = require("serial")
 
 local test = lovecase.newTestSet("serial")
 

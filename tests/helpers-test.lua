@@ -1,5 +1,5 @@
-local helpers = require("lovecase.helpers")
-local lovecase = require("lovecase")
+local helpers = require("helpers")
+local lovecase = require("init")
 
 local test = lovecase.newTestSet("helpers")
 
