@@ -1,5 +1,5 @@
 # lovecase
-Lightweight unit testing module written in LuaJIT that integrates well into the [LÖVE](https://love2d.org/) framework.
+Lightweight unit testing module for [LÖVE](https://love2d.org/)-based projects. It relies on built-in features of Lua and LÖVE and has no external dependencies.
 
 lovecase was built to be used in LÖVE 11.x but might work in earlier versions just as well. It does not provide any kind of mocking framework and also does not even try to isolate your code. So the unit tests defined by lovecase do not match the accepted definition of unit tests very well.
 
@@ -13,57 +13,47 @@ This is how a unit test file written with lovecase looks like:
 local lovecase = require("libs.lovecase")
 local List = require("List")
 
-local test = lovecase.newTestSet("List Tests")
-
--- Add a check so that lovecase can detect List instances.
-test:addTypeCheck(function (value)
-  return List.isInstance(value) and "List" or false
-end)
-
--- Add a check so that lovecase can compare lists.
--- Alternatively you could also overload the == operator for lists.
-test:addEqualityCheck("List", function (list1, list2)
-  return list1:equal(list2)
-end)
+local expect = lovecase.expect
+local suite = lovecase.newSuite("List Tests")
 
 -- You can group several test cases together (subgroups work as well).
-test:group("removeValue()", function ()
-  test:run("should remove the specified value", function ()
+suite:describe("removeValue()", function ()
+  suite:test("should remove the specified value", function ()
     local list = List.new{1,2,9,3}
     list:removeValue(9)
-    test:assertEqual(list, List.new{1,2,3})
+    expect.equal(list, List.new{1,2,3})
   end)
-  test:run("should return nil if value is not present", function ()
+  suite:test("should return nil if value is not present", function ()
     local list = List.new()
-    test:assertEqual(list:removeValue(1), nil)
+    expect.equal(list:removeValue(1), nil)
   end)
 end)
 
 -- Grouping is optional, though.
-test:run("reverse() should reverse the order of values", function ()
-  test:assertEqual(List.new{1,2,3,4}:reverse(), List.new{4,3,2,1})
+suite:test("reverse() should reverse the order of values", function ()
+  expect.equal(List.new{1,2,3,4}:reverse(), List.new{4,3,2,1})
 end)
 
 -- You can provide your test cases with test data.
 -- The test case is repeated for each row in the test data table.
-test:run("remove() should remove the value at the specified index", function (input, index, expected)
+suite:test("remove() should remove the value at the specified index", function (input, index, expected)
   local actual = List.new(input)
   actual:remove(index)
-  test:assertEqual(actual, List.new(expected))
+  expect.equal(actual, List.new(expected))
 end, {
   { {6,7,8,9}, 1, {7,8,9} },
   { {6,7,8,9}, 4, {6,7,8} },
 })
 
--- Your unit test files have to return the test set.
-return test
+-- Your unit test files have to return the test suite.
+return suite
 ```
 
 Assuming that the above file is named `List-test.lua`, the test cases can be run as follows:
 
 ```lua
 local report = lovecase.runTestFile("path/to/List-test.lua")
-print(report:printResults()) -- Show the results.
+print(report:getResults()) -- Show the results.
 ```
 
 You can also run all test files from a given directory (recursively, if you like). By default, all files whose names end with `-test.lua` are considered test files:
@@ -96,34 +86,26 @@ List Tests
     PASSED: should reverse the order of values
 ```
 
-You can also override the formatting options for the report:
-
-```lua
-local report = lovecase.newTestReport({
-  onlyFailures = true, -- Show only failed tests
-  indentSpaces = 3,
-})
-lovecase.runTestFile("path/to/List-test.lua", report)
-print(report:printResults())
-```
-
 ## Assertions
 
-This is a list of all available assertion methods:
+Use `lovecase.expect` to make assertions about a value, e.g. `lovecase.expect.notEqual(4, 2)`.
 
-- `assertEqual`
-- `assertNotEqual`
-- `assertSmallerThan`
-- `assertSmallerThanEqual`
-- `assertGreaterThan`
-- `assertGreaterThanEqual`
-- `assertTrue`
-- `assertFalse`
-- `assertSame` – Always uses the raw `==` operator for equality checks.
-- `assertNotSame` – Always uses the raw `==` operator for equality checks.
-- `assertAlmostEqual` – Compares numbers with tolerance (also works with nested tables).
-- `assertNotAlmostEqual` – Compares numbers with tolerance (also works with nested tables).
-- `assertError` – Tests if a function raises an error.
+This is a list of all available assertions:
+
+- `equal(a, b)`
+- `notEqual(a, b)`
+- `lessThan(a, b)`
+- `lessThanOrEqual(a, b)`
+- `greaterThan(a, b)`
+- `greaterThanOrEqual(a, b)`
+- `isTrue(a)`
+- `isFalse(a)`
+- `same(a, b)` – Always uses the raw `==` operator for equality checks.
+- `notSame(a, b)` – Always uses the raw `==` operator for equality checks.
+- `almostEqual(a, b)` – Compares numbers with tolerance (also works with nested tables).
+- `notAlmostEqual(a, b)` – Compares numbers with tolerance (also works with nested tables).
+- `error(a)` – Asserts that a function raises an error.
+- `noError(a)`
 
 ## Demo
 
@@ -133,22 +115,29 @@ lovecase ships with a LÖVE demo script that provides some working example test 
 
 ### How are tables compared for equality?
 
-lovecase performs a deep comparison between two tables to determine if they are equivalent. This only works under two conditions:
+lovecase tries the following options to compare tables:
 
-- There is no custom equality check for the tables in question
-- The tables in question cannot be compared by the `__eq` metamethod
+- Use the `__eq` metamethod to compare the tables, if possible.
+- Use a method named `equal` or `equals` to compare the tables, if the same method exists in both tables (e.g. `t1:equal(t2)`)
+- Perform a deep comparison between the tables to determine if they are equivalent.
 
-To override this behaviour, you can just define your own equality check for tables:
+### How and where to run the tests?
+
+A proven approach is to create a game state dedicated to running unit tests. Set this state as the initial state if the game is started in dev mode. Show the test results if any test fails, switch to the next state otherwise.
+
+Example:
 
 ```lua
-test:addEqualityCheck("table", function (table1, table2)
-  return myCustomEqualityCheckForTables(table1, table2)
-end)
+function TestState:onEnter()
+  local report = lovecase.runAllTestFiles("directory/with/tests", true)
+
+  if report:hasErrors() then
+    print(report:getResults())
+  else
+    self:switchToState("MainMenu")
+  end
+end
 ```
-
-## TODOs
-
-- Add more unit tests for lovecase
 
 ## License
 

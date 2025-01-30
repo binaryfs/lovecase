@@ -1,23 +1,13 @@
--- Utilities to serialize tables.
+local BASE = (...):gsub("[^%.]*$", "")
+--- @type lovecase.utils
+local utils = require(BASE .. "utils")
 
-local M = {}
+--- Utilities to serialize values.
+--- @class lovecase.serial
+local serial = {}
 
 -- Forward declarations
 local serializeValue
-
---- @param t table
---- @param value any
---- @return integer?
---- @nodiscard
---- @package
-local function indexOf(t, value)
-  for index = 0, #t do
-    if t[index] == value then
-      return index
-    end
-  end
-  return nil
- end
 
 --- Serialize a primitive value to a sequence of string tokens.
 --- @param value any The value to serialize
@@ -83,7 +73,7 @@ end
 function serializeValue(value, tokens, stack)
   if type(value) == "table" then
     local mt = getmetatable(value)
-    if (mt and mt.__tostring) or indexOf(stack, value) then
+    if (mt and mt.__tostring) or utils.indexOf(stack, value) then
       table.insert(tokens, string.format("%q", tostring(value)))
     else
       serializeTable(value, tokens, stack)
@@ -97,10 +87,10 @@ end
 --- @param value any
 --- @return string serializedValue
 --- @nodiscard
-function M.serialize(value)
+function serial.serialize(value)
   local tokens = {}
   serializeValue(value, tokens, {})
   return table.concat(tokens)
 end
 
-return M
+return serial

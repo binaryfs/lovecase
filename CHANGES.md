@@ -1,7 +1,26 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [4.0.0] - 2025-01-30
+
+### Added
+
+- BREAKING CHANGE: `lovecase.expect` to make assertions about a value. This function replaces the `assert*` functions of the removed `TestSet` class.
+- Internal `Group` class to represent a collection of test cases and subgroups
+- Internal `Result` class to represent the result of a test case
+
+### Changed
+
+- Rename internal `helpers` module to `utils`
+- BREAKING CHANGE: The `TestSet` class was refactored and renamed to `Suite`
+- BREAKING CHANGE: The `TestReport` class was refactored and renamed to `Report`
+- BREAKING CHANGE: Renamed `lovecase.newTestSet()` to `lovecase.newSuite()`
+
+### Removed
+
+- BREAKING CHANGE: Custom type checks and equality checks via `TestSet:addTypeCheck()` and `TestSet:addEqualityCheck()`. Define the `__eq` metamethod or an `equal[s]` method for your tables to use custom equality checks.
 
 ## [3.1.1] - 2023-11-04
 
