@@ -9,7 +9,7 @@ local Suite = require(BASE .. "Suite")
 local lovecase = {
   _NAME = "lovecase",
   _DESCRIPTION = "Lightweight unit testing module for LÖVE-based projects",
-  _VERSION = "4.0.0",
+  _VERSION = "4.0.1",
   _URL = "https://github.com/binaryfs/lovecase",
   _LICENSE = [[
     MIT License
