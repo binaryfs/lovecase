@@ -38,7 +38,6 @@ end
 --- Add the test results of the specified suite to the report.
 --- @param suite lovecase.Suite
 function Report:addSuite(suite)
-  utils.assertArgument(1, suite, "Suite")
   local total, failed = suite:getTestCount()
   self.totalTestCount = self.totalTestCount + total
   self.failedTestCount = self.failedTestCount + failed
