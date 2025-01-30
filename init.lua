@@ -1,11 +1,15 @@
 local BASE = (...):gsub("init$", ""):gsub("([^%.])$", "%1%.")
-local TestSet = require(BASE .. "TestSet")
-local TestReport = require(BASE .. "TestReport")
+--- @type lovecase.expect
+local expect = require(BASE .. "expect")
+--- @type lovecase.Report
+local Report = require(BASE .. "Report")
+--- @type lovecase.Suite
+local Suite = require(BASE .. "Suite")
 
 local lovecase = {
   _NAME = "lovecase",
-  _DESCRIPTION = "Lightweight unit testing module that integrates well into the LÖVE framework",
-  _VERSION = "3.1.1",
+  _DESCRIPTION = "Lightweight unit testing module for LÖVE-based projects",
+  _VERSION = "4.0.0",
   _URL = "https://github.com/binaryfs/lovecase",
   _LICENSE = [[
     MIT License
@@ -32,72 +36,55 @@ local lovecase = {
   ]],
 }
 
---- The pattern that is used to detect test files if no custom pattern is specified.
-local TEST_FILE_PATTERN = "%-test%.lua$"
+local TEST_FILE_DEFAULT_PATTERN = "%-test%.lua$"
 
---- Create a new test set.
---- @param name string The name of the test set
---- @return lovecase.TestSet
+lovecase.expect = expect
+
+--- Create a new test suite.
+--- @param suiteName string
+--- @return lovecase.Suite
 --- @nodiscard
---- @see lovecase.TestSet.new
-function lovecase.newTestSet(name)
-  return TestSet.new(name)
+function lovecase.newSuite(suiteName)
+  return Suite.new(suiteName)
 end
 
---- Create a new test report.
+--- Run the specified test file and return the result.
 ---
---- The `options` table can have the folloing fields:
---- * `indentSpaces` - Number of spaces per indention level
---- * `onlyFailures` - If true, show only failed tests
---- * `failedPrefix` - Prefix for failed tests
---- * `failedResultLine` - Format string to show number of failed tests
---- * `passedPrefix` - Prefix for passed tests
---- * `passedResultLine` - Format string to show number of passed tests
---- @param options? table
---- @return lovecase.TestReport
---- @nodiscard
---- @see lovecase.TestReport.new
-function lovecase.newTestReport(options)
-  return TestReport.new(options)
-end
-
---- Run the specified unit test file and return the result.
----
---- The result is written into a `TestReport` instance. If no such report is specified, a
---- new report is created internally.
---- @param filepath string The path to the unit test file
---- @param report? lovecase.TestReport The report into which the test results are to be written
---- @return lovecase.TestReport # A report with the test results
+--- If `report` is not specified, a new report is created internally.
+--- @param filepath string The path to the test file
+--- @param report? lovecase.Report The report that is to record the test results
+--- @return lovecase.Report report Report with the test results
 function lovecase.runTestFile(filepath, report)
-  if report and not TestReport.isInstance(report) then
-    error("TestReport object expected, got: " .. type(report))
+  report = report or Report.new()
+  local chunk, errorMessage = love.filesystem.load(filepath)
+
+  if errorMessage then
+    error(errorMessage)
   end
 
-  local chunk, err = love.filesystem.load(filepath)
-  if err then
-    error(err)
+  --- @type lovecase.Suite
+  local suite = chunk()
+
+  if not Suite.isSuite(suite) then
+    error(string.format("Test file '%s' did not return a Suite instance", filepath))
   end
 
-  local test = chunk()
-  if not TestSet.isInstance(test) then
-    error("Loaded file did not return a TestSet: " .. filepath)
-  end
+  report:addSuite(suite)
 
-  return test:writeReport(report or lovecase.newTestReport())
+  return report
 end
 
---- Run all unit test files from the specified directory and return the results.
+--- Run all test files from the specified directory and return the result.
 ---
---- The result is written into a `TestReport` instance. If no such report is specified, a
---- new report is created internally.
+--- If `report` is not specified, a new report is created internally.
 --- @param path string The directory path
---- @param recursive? boolean Search for test files recursively (default: false)
---- @param pattern? string The pattern for detecting test files (default: `lovecase.TEST_FILE_PATTERN`)
---- @param report? lovecase.TestReport The report into which the test results are to be written
---- @return lovecase.TestReport # A report with the test results
+--- @param recursive? boolean Search for test files recursively (`false`)
+--- @param pattern? string The pattern for detecting test files (`"%-test%.lua$"`)
+--- @param report? lovecase.Report The report that is to record the test results
+--- @return lovecase.Report report Report with the test results
 function lovecase.runAllTestFiles(path, recursive, pattern, report)
-  pattern = pattern or TEST_FILE_PATTERN
-  report = report or lovecase.newTestReport()
+  pattern = pattern or TEST_FILE_DEFAULT_PATTERN
+  report = report or Report.new()
   local items = love.filesystem.getDirectoryItems(path)
 
   for _, item in ipairs(items) do
