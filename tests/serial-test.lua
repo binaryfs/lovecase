@@ -1,27 +1,33 @@
 local lovecase = require("init")
 local serial = require("serial")
 
-local test = lovecase.newTestSet("serial")
+local serialize = serial.serialize
+local expect = lovecase.expect
+local suite = lovecase.newSuite("serial")
 
-test:group("serialize()", function ()
-  test:run("should serialize primitive values", function ()
-    test:assertEqual(serial.serialize(123), "123")
-    test:assertEqual(serial.serialize("abc"), '"abc"')
-    test:assertEqual(serial.serialize(true), "true")
-    test:assertEqual(serial.serialize(nil), "nil")
+suite:describe("serialize()", function ()
+  suite:test("should serialize primitive values", function ()
+    expect.equal(serialize(123), "123")
+    expect.equal(serialize("abc"), '"abc"')
+    expect.equal(serialize(true), "true")
+    expect.equal(serialize(nil), "nil")
   end)
-  test:run("should serialize tables", function ()
-    test:assertEqual(serial.serialize({}), "{}")
-    test:assertEqual(serial.serialize({4,5,6}), "{4,5,6,}")
-    test:assertEqual(serial.serialize({1,"x",2}), '{1,"x",2,}')
-    test:assertEqual(serial.serialize({a = 123}), '{["a"]=123,}')
-    test:assertEqual(serial.serialize({1,2,{a = 3}}), '{1,2,{["a"]=3,},}')
+  suite:test("should pseudo-serialize functions", function ()
+    local func = function () end
+    expect.equal(serialize(func), tostring(func))
   end)
-  test:run("should detect and prevent reference loops", function ()
+  suite:test("should serialize tables", function ()
+    expect.equal(serialize({}), "{}")
+    expect.equal(serialize({4,5,6}), "{4,5,6,}")
+    expect.equal(serialize({1,"x",2}), '{1,"x",2,}')
+    expect.equal(serialize({a = 123}), '{["a"]=123,}')
+    expect.equal(serialize({1,2,{a = 3}}), '{1,2,{["a"]=3,},}')
+  end)
+  suite:test("should detect and prevent reference loops", function ()
     local a = { foo = {} }
     a.foo.bar = a
-    test:assertEqual(serial.serialize(a), string.format('{["foo"]={["bar"]="%s",},}', tostring(a)))
+    expect.equal(serialize(a), string.format('{["foo"]={["bar"]="%s",},}', tostring(a)))
   end)
 end)
 
-return test
+return suite
