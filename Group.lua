@@ -2,7 +2,7 @@ local BASE = (...):gsub("[^%.]*$", "")
 --- @type lovecase.utils
 local utils = require(BASE .. "utils")
 
---- Internal calss to represent a group of test cases.
+--- Internal class to represent a group of test cases.
 --- @class lovecase.Group
 --- @field private name string
 --- @field private parentGroup lovecase.Group|nil

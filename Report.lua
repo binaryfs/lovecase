@@ -1,7 +1,3 @@
-local BASE = (...):gsub("[^%.]*$", "")
---- @type lovecase.utils
-local utils = require(BASE .. "utils")
-
 --- The Report class contains the results of one or more test suites.
 --- @class lovecase.Report
 --- @field private lines string[]
