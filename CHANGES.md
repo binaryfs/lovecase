@@ -3,6 +3,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.1.0] - 2025-09-06
+
+### Added
+
+- A `callback` parameter for `lovecase.newSuite()` and `Suite.new()` to wrap tests in a closure
+
+### Deprecated
+
+- The assertions from `lovecase.expect` will be moved to `lovecase` in order to remove the `local expect = lovecase.expect` boilterplate code
+
 ## [4.0.1] - 2025-01-30
 
 ### Fixed

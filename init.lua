@@ -9,12 +9,12 @@ local Suite = require(BASE .. "Suite")
 local lovecase = {
   _NAME = "lovecase",
   _DESCRIPTION = "Lightweight unit testing module for LÖVE-based projects",
-  _VERSION = "4.0.1",
+  _VERSION = "4.1.0",
   _URL = "https://github.com/binaryfs/lovecase",
   _LICENSE = [[
     MIT License
 
-    Copyright (c) 2020 Fabian Staacke
+    Copyright (c) 2020-2025 Fabian Staacke
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -42,10 +42,11 @@ lovecase.expect = expect
 
 --- Create a new test suite.
 --- @param suiteName string
+--- @param callback? fun(suite: lovecase.Suite)
 --- @return lovecase.Suite
 --- @nodiscard
-function lovecase.newSuite(suiteName)
-  return Suite.new(suiteName)
+function lovecase.newSuite(suiteName, callback)
+  return Suite.new(suiteName, callback)
 end
 
 --- Run the specified test file and return the result.

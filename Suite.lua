@@ -13,9 +13,10 @@ local Suite = {}
 Suite.__index = Suite
 
 --- @param suiteName string
+--- @param callback? fun(suite: lovecase.Suite)
 --- @return lovecase.Suite
 --- @nodiscard
-function Suite.new(suiteName)
+function Suite.new(suiteName, callback)
   --- @type lovecase.Suite
   local suite = setmetatable({}, Suite)
 
@@ -23,6 +24,10 @@ function Suite.new(suiteName)
   suite.failedTestCount = 0
   suite.groupStack = {}
   suite:pushGroup(suiteName)
+
+  if type(callback) == "function" then
+    callback(suite)
+  end
 
   return suite
 end
